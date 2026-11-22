@@ -7,7 +7,8 @@ Unofficial tools for the [Audima Labs Sway](https://audima.com.au) MIDI controll
   `http://localhost:7729`.
 - **Sway Bridge.app** (macOS) — a native SwiftUI app with the bridge built in. It shows a
   drawing of the Sway: click a region, pad or dial on it to edit it, and watch pads, dials and
-  hand levels light up as you play. It serves the OBS overlay while it is running.
+  hand levels light up as you play. It can switch the Sway to any preset (by sending a MIDI
+  Program Change) and serves the OBS overlay while it is running.
 - **Configurator** (`/config/`) — edit presets, regions, pads and dials in a browser and send
   them to the device.
 - **OBS overlay** (`/overlay/`) — a live picture of the pads, dials, LED strip and hand
@@ -24,7 +25,7 @@ from a retail unit on firmware 1.3.0; other firmware versions may differ.
 | Piece | State |
 | --- | --- |
 | Bridge on macOS | Working against real hardware: read, edit, write and verify presets |
-| Sway Bridge.app (macOS) | Reads the Sway and edits presets; sending from the app and its live hand levels not yet tried with the hardware |
+| Sway Bridge.app (macOS) | Reads the Sway, edits presets and switches the active preset; sending an edited preset from the app and its live hand levels not yet tried with the hardware |
 | Configurator, overlay | Working; overlay hand display checked with simulated input only |
 | Sway Map (Max for Live) | Loads and initialises in Live 12; mapping not yet exercised with the hardware |
 | Control surface script | Written against Live 12's bundled framework; not yet run |

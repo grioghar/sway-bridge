@@ -22,6 +22,9 @@ struct SwayBridgeApp: App {
                 Button("Revert Changes") { model.revert() }
                     .disabled(!model.isDirty)
                 Divider()
+                Button("Switch Sway to This Preset") { model.activate() }
+                    .keyboardShortcut(.return)
+                    .disabled(!model.state.connected || model.busy || model.open == nil || model.open == model.selection)
                 Button("Reload from Sway") { model.reload() }
                     .keyboardShortcut("r")
                     .disabled(!model.state.connected || model.busy)

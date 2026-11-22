@@ -230,6 +230,7 @@ Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manua
 ### Program Change (receive)
 - A MIDI clip routed to the Sway with **Bank and Program set to the target bank and preset number** switches preset when played.
 - **Bank 0, Program 37 = enter SLEEP; Bank 0, Program 38 = exit SLEEP.**
+- **Measured on firmware 1.3.0 (2026-11-22):** a raw Program Change on channel 1 with value 0-35 selects preset `bank * 6 + preset` (both counted from 0), with no Bank Select needed: value 2 gave bank 1 preset 3, value 7 gave bank 2 preset 2, value 35 gave bank 6 preset 6. The manual's 37 and 38 are the same scale counted from 1 (raw 36 and 37); sleep/wake were not tried.
 
 ### Hardware
 - Ports: MIDI out **TRS Type A** (left), USB-C power in (middle; wall adapter rated under 35 W), USB-C host data+power (right). Class-compliant USB MIDI on macOS, Windows 10+ and Linux.
@@ -239,4 +240,3 @@ Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manua
 ### Open questions this raises for the project
 - Where the knob-press CCs and the mappable-button CCs live in the preset bytes (candidates: the three unexplained 16-byte arrays after the pad notes, and region bytes 45-48, 72, 77).
 - Whether the idle "notes 0-14" seen on the wire were knob presses or buttons in the default (non-custom) mode.
-- The exact Bank/Program numbering for preset switching (needs MIDI output from the bridge to test).

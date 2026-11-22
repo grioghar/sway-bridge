@@ -206,6 +206,20 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Switch the Sway itself to a preset (by default the one open in the editor).
+    func activate(_ slot: Slot? = nil) {
+        guard let bridge, let slot = slot ?? open, state.connected, !busy, slot != selection else { return }
+        busy = true
+        bridge.activatePreset(bank: slot.bank, preset: slot.preset) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.busy = false
+                if let error { self.say("\(error)", isError: true) }
+                else { if slot == self.open { self.follow = true }; self.say("The Sway is now on bank \(slot.bank + 1), preset \(slot.preset + 1).") }
+            }
+        }
+    }
+
     func commitBrightness() {
         guard let bridge, state.connected else { return }
         bridge.setBrightness(Int(brightness.rounded())) { [weak self] error in

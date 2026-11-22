@@ -25,6 +25,9 @@ struct ContentView: View {
             ToolbarItemGroup {
                 if model.busy { ProgressView().controlSize(.small) }
                 if model.isDirty { Text("Unsent changes").foregroundStyle(.orange).font(.callout) }
+                Button("Switch Sway to This Preset") { model.activate() }
+                    .disabled(!model.state.connected || model.busy || model.open == nil || model.open == model.selection)
+                    .help("Make the preset shown here the active one on the Sway")
                 Button("Reload") { model.reload() }
                     .disabled(!model.state.connected || model.busy)
                     .help("Read everything from the Sway again")
@@ -118,6 +121,10 @@ struct PresetList: View {
                                 }
                             }
                             .tag(slot)
+                            .contextMenu {
+                                Button("Switch Sway to This Preset") { model.activate(slot) }
+                                    .disabled(!model.state.connected || model.selection == slot)
+                            }
                         }
                     }
                 }

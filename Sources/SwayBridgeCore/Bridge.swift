@@ -26,6 +26,7 @@ public final class Bridge {
     private var lastBackup: [UInt8] = []
     private var midi: MIDIListener!
     private let encoder = JSONEncoder()
+    private let midiOut = makeMIDISender(matching: "sway")
 
     /// Hooks for an app embedding the bridge. Set before `start()`; called on the bridge's queue.
     public var onState: ((BridgeState) -> Void)?
@@ -65,6 +66,11 @@ public final class Bridge {
 
     public func writePreset(bank: Int, preset: Int, _ edited: Preset, completion: @escaping (Error?) -> Void) {
         run({ try self.store(edited, bank: bank, preset: preset) }, completion)
+    }
+
+    /// Make a preset the active one on the Sway (it switches on receiving a Program Change).
+    public func activatePreset(bank: Int, preset: Int, completion: @escaping (Error?) -> Void) {
+        run({ try self.activate(bank: bank, preset: preset) }, completion)
     }
 
     private func run(_ body: @escaping () throws -> Void, _ completion: @escaping (Error?) -> Void) {
@@ -209,6 +215,8 @@ public final class Bridge {
             break
         case "refresh":
             try refresh()
+        case "activatePreset":
+            try activate(bank: try int("bank", 0...5), preset: try int("preset", 0...5))
         case "setBrightness":
             try applyBrightness(try int("value", 0...255))
         case "writePreset":
@@ -220,6 +228,19 @@ public final class Bridge {
             throw BridgeError(description: "unknown method \(method)")
         }
         publish()
+    }
+
+    /// Program Change 0-35 selects bank * 6 + preset (found by experiment on firmware 1.3.0;
+    /// 36 and 37 are sleep and wake). Confirmed afterwards over the serial link.
+    private func activate(bank: Int, preset: Int) throws {
+        guard (0...5).contains(bank), (0...5).contains(preset) else { throw BridgeError(description: "no such preset slot") }
+        try midiOut.send([0xc0, UInt8(bank * SwayLayout.presetsPerBank + preset)])
+        Thread.sleep(forTimeInterval: 0.3)
+        let now = try withClient { try $0.selection() }
+        state.selection = now
+        guard now == PresetSelection(bank: bank, preset: preset) else {
+            throw BridgeError(description: "the Sway did not switch preset (is its firmware 1.3.0 or later?)")
+        }
     }
 
     private func applyBrightness(_ value: Int) throws {
