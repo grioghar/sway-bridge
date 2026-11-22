@@ -252,3 +252,35 @@ Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manua
 - **Press ("push") gesture:** modulation starts from the height at which the note was triggered rather than using the full height (user, Jul 2026).
 - **Other software:** no TouchDesigner patch, no Linux or mobile configuration app; any MIDI-capable software works for playing. Ableton Live Standard is enough; Suite only adds instruments and Max for Live (staff, Apr 2025).
 - The display-knob cap and the eight encoder caps are standard enough that staff offered dimensions for 3D-printed replacements (Feb 2025).
+
+## 11. Discord threads and Audima's tutorial videos (2026-11-22)
+
+Videos were read as YouTube's auto-generated transcripts, not watched: anything shown only on screen ("click this button here") is not captured.
+
+### Threads
+- The server has four threads in total (one in #sway, three in #technical-support). Only new fact: the sensor board cannot be separated from the unit (staff, May 2026).
+
+### "What's New in the Sway Update" (YznUAxwg920)
+- **Dial pages are chosen by clicking a knob.** Clicking a knob switches the MIDI channel that all eight knobs send on; clicking the first knob returns to the original. Eight knobs x eight channels = "up to 64 different controls". This is the A-H page selection.
+- **Pad layouts:** pink = the built-in finger-drumming layout; green = the custom layout edited in the app (reached with a button on the Sway).
+- Pad Configuration "output type" includes Chord and Lead (single notes); Apply to Pads fills all pads from the chosen key and octave.
+- Propagate Pads / Propagate Encoders copy the custom mapping to every preset; without it a change stays on the one preset.
+- Two-handed note playing is automatic on all instrument grids.
+- MPE: piano icon, enable MIDI Polyphonic Expression, Apply to Regions, push; the instrument must have MPE enabled too.
+- Program Change in an Ableton MIDI clip routed to "Audima Labs The Sway": set Bank and Program (sub-bank unused), e.g. bank 1, program 3 for preset 3. Bank 0 with program 37 = sleep, 38 = wake.
+- App: Cmd-[ / Cmd-] dim and brighten the LEDs (with min/max warnings); right-click presets to Select, Copy from, Swap; Cmd-drag a region to copy it, drag to swap.
+
+### "Master Sway's Effect Controls & App Settings" (AlOIoXLroMA) and "Instrument Modes & Gesture Controls" (PFm-i0fTJqU)
+- Region colours: start colour is the lowest height, end colour the highest; the LED shows the gradient between them as the hand rises.
+- Modulation settings: Horizontal and Vertical CC, each with its own channel; the Sway's display shows the same numbers. Clicking **Link Hands** reveals the second hand's CC settings, which must be different numbers from the first hand's. To map the second hand, put two hands in the region while the DAW is learning.
+- **Beat Stutter** checkbox (later renamed Trigger): no tracking dot, a brighter beam on entry and a gradient with height. Entry sends a button CC (learn it by putting a hand in and taking it out), height sends a second CC (learn it by leaving the hand in).
+- Invert Horizontal Axis flips X (and the LED); Clear CC on Release drops the CC to 0 and the LED goes out when the hand leaves.
+- Instrument settings per region: note, octave, chord type (Unison = single note), inversion, and per-note manual edits of note, octave and channel. Expression checkboxes: Strike, Sway, Pulse, Press. Sway is learned by shaking the hand in the region, Pulse by lifting, Press by pushing toward the base.
+- Piano icon: choose scale and key, Assign to Regions; choose Unison for single notes.
+
+### "Get familiar with the Sway app" (Tor7iyJxSlc), "Setting Up the MIDI Remote Script" (1JCoFNKi8LU), "How to map Sway to Ableton Live" (YGrEHJ4MAkQ)
+- **Banks, from Audima's own app tutorial: long-press preset button 2 to reach bank 2, button 3 for bank 3, and so on.** (The newer manual describes hold-then-press; firmware may have changed.)
+- The app's Sway icon is purple when connected.
+- **Remote script behaviour:** purple pads all lit = script not engaged (reset the control surface). With it engaged the pads show one per track and solo tracks; one black button cycles the pads solo -> arm -> mute; other black buttons move the session box left/right/up/down; one launches and stops the master scene. Knobs control track volume; **clicking knob 2 switches them to pan, knob 3 to send A, knob 4 to send B, knob 1 back to volume.** Ports: input Track + Remote + MPE, output Track + Remote.
+- Mapping walkthrough confirms the factory preset values seen in this project's captures: bank 1 preset 2 sends Y1 = CC 38 and X1 = CC 50, second hand from CC 52; bank 1 preset 3's trigger region sends CC 14 on entry and CC 18 for height.
+- "Sway Beginner Guide" (5HF4dUurW_o): uses the free Vital synth and a "Vital Sway preset pack" project; MPE glide works best entering the centre of a region and then sliding sideways. Nothing else new about the hardware.
