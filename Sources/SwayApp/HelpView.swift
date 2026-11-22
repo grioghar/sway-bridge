@@ -95,7 +95,7 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "Pads, dials and buttons", points: [
             "Pads normally glow pink and send fixed notes. Hold the bottom-left black button of the right-hand group for 3 seconds to switch to the custom mapping stored in the preset; the pads turn green. If your pad or dial edits seem to do nothing, this is almost always why.",
             "Clicking a dial changes the dial page: click dial 2 and all eight dials send on page B, dial 3 for page C, and so on; click dial 1 to return to page A. That gives 64 controls from eight dials. (Audima's manual also describes a dial press as sending its own CC.)",
-            "The eight black buttons have no fixed job and can be mapped in your DAW. With Audima's Ableton script they move around Session view and launch or stop scenes.",
+            "The eight black buttons always send notes 0–7 on MIDI channel 2 (measured on firmware 1.3.0), whatever the preset, so map them in your DAW with MIDI learn. With Audima's Ableton script they move around Session view and launch or stop scenes.",
             "The pads take a firm press. Their contacts are at the outer edge, so pressing near an edge works better than the middle.",
         ]),
         HelpSection(heading: "Power", points: [
@@ -125,7 +125,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "About", points: [
             "Sway Bridge is an independent project and is not made or endorsed by Audima Labs. It was built against firmware 1.3.0; other versions may behave differently.",
-            "A few preset settings are not understood yet, including what the black buttons and dial presses send. Sway Bridge leaves those bytes exactly as they were.",
+            "A few bytes in each region are not understood yet; Sway Bridge leaves them exactly as they were. The black buttons and dial clicks are not preset settings at all: the buttons always send notes 0–7 on MIDI channel 2, and a dial click only changes dial page.",
         ]),
     ]),
 ]

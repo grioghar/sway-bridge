@@ -27,7 +27,7 @@ public struct Region: Codable, Equatable {
     public var mode: Int                 // index into SwayLayout.modes
     public var xMin: Float, yMin: Float, xMax: Float, yMax: Float
     public var strikeThreshold: Float?   // nil = off
-    public var ccX: Int?, ccX2: Int?     // second copy's purpose is unconfirmed
+    public var ccX: Int?, ccX2: Int?     // X2 / Y2 are the second hand's CCs (used when Link Hands is off)
     public var ccY: Int?, ccY2: Int?
     public var swayCc: Int?
     public var pulseCc: Int?
@@ -37,7 +37,7 @@ public struct Region: Codable, Equatable {
     public var rootOctave: Int
     public var noteCount: Int
     public var noteChannels: [Int]
-    public var chordInversion: Int       // unconfirmed: always 0 in factory presets
+    public var chordInversion: Int       // 0 root, 1 first, 2 second; 0 in all factory presets
     public var chordType: Int
     public var colorStart: String        // "#rrggbb"
     public var colorEnd: String
@@ -108,12 +108,15 @@ public struct Region: Codable, Equatable {
 
 public struct Pads: Codable, Equatable {
     public var rootNotes: [Int]
-    public var chordTypes: [Int]       // order of the three all-zero arrays is unconfirmed
+    public var chordTypes: [Int]       // field order matches the Pads struct in Audima's app
     public var rootOctaves: [Int]
     public var chordInversions: [Int]
     public var channels: [Int]
 }
 
+/// Dial settings. A page is selected on the hardware by clicking dial N (page N); every dial then
+/// sends `ccNumbers[page][dial]` on `channels[page][dial]`. Nothing else is stored for a dial press,
+/// and the eight black buttons are not in the preset at all (they send notes 0-7 on channel 2).
 public struct Encoders: Codable, Equatable {
     public var ccNumbers: [[Int]]      // 8 pages x 8 dials
     public var channels: [[Int]]

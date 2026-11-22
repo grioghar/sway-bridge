@@ -270,7 +270,7 @@ struct ControlInspector: View {
             }
         case .button(let index):
             GroupBox("Small button \(index + 1)") {
-                Text("By default these buttons have no fixed job and can be MIDI-mapped freely; Audima's Ableton script uses them to move around Session view and launch or stop scenes. On the right-hand group, holding the bottom-left button for 3 seconds switches the pads and dials to the custom mapping stored in the preset (the pads turn green).")
+                Text("The black buttons are not part of a preset, so there is nothing to edit: this one always sends note \\(index) on MIDI channel 2, which you can map in your DAW. (Which physical button is which number has not been checked; press one and watch which lights up here.) On the right-hand group, holding the bottom-left button for 3 seconds switches the pads and dials to the custom mapping stored in the preset; the pads turn green.")
                     .foregroundStyle(.secondary).padding(6).frame(maxWidth: 420, alignment: .leading)
             }
         }

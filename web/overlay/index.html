@@ -180,7 +180,7 @@ function onMidi(m) {
   const hits = midiMap.lookup(m);
   if (!hits) {
     const type = m[0] & 0xf0, ch = (m[0] & 15) + 1;
-    // Provisional: the eight small buttons appear to send notes 0-7 on channel 2.
+    // The eight black buttons are not in the preset: they send notes 0-7 on channel 2.
     if ((type === 0x90 || type === 0x80) && ch === 2 && m[1] < 8) {
       const b = buttonNodes[m[1]];
       b.held = type === 0x90 && m[2] > 0;

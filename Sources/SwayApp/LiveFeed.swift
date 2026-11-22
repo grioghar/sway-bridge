@@ -107,9 +107,13 @@ final class LiveFeed: ObservableObject {
         var hot = self.hot, hands = self.hands, dials = self.dials, page = dialPage
         for message in batch {
             let hit = map.lookup(message)
-            // Provisional: the eight small buttons appear to send notes 0-7 on channel 2.
-            if hit.targets.isEmpty, message.count >= 3, message[0] & 0xef == 0x81, message[1] < 8 {
-                hot["button-\(message[1])"] = message[0] & 0xf0 == 0x90 && message[2] > 0 ? .distantFuture : now
+            // Controls that are not in the preset: the eight black buttons send notes 0-7 on
+            // channel 2, and in the built-in (pink) pad layout the pads send notes 0-15 on channel 1.
+            if hit.targets.isEmpty, message.count >= 3, message[0] & 0xe0 == 0x80 {
+                let held = message[0] & 0xf0 == 0x90 && message[2] > 0
+                let channel = message[0] & 0x0f, note = Int(message[1])
+                if channel == 1, note < 8 { hot["button-\(note)"] = held ? .distantFuture : now }
+                if channel == 0, note < 16 { hot["pad-\(note)"] = held ? .distantFuture : now }
             }
             for target in hit.targets {
                 // Notes stay lit while held; everything else fades shortly after it stops moving.

@@ -294,3 +294,17 @@ Videos were read as YouTube's auto-generated transcripts, not watched: anything 
 - **Firmware update (KFL2E-Oj8js):** delete the old app, install the new one (Windows: first install the STM32 bootloader from Audima's DFU driver zip), Device > Upgrade Firmware, then follow the prompts: do not disconnect; when told, unplug and replug; the display shows an upgrade message; unplug and replug once more; power on. The app then reports the upgrade complete.
 - **Traktor / Rekordbox / Serato / FL / Logic / Cubase setups:** all the same method: enable "Audima Labs The Sway" as a MIDI device, use the software's learn mode, and isolate one output at a time with the Sway's display knob (X1, Y1 or Trigger), deselecting afterwards. DJ presets use the **X-Trigger / Y modulation** mode per column with unique CCs per region (e.g. triggers 100-103, heights 80-83), Clear CC on Release, and in Traktor the control type set to Button for triggers. Cubase has an importable MIDI Remote script with a mapping page.
 - Not read: the three "playthrough" performances, the short promo clips, and "Viral Feature Walkthrough part 2" (Ableton mapping of the demo set). These are mostly music with little narration.
+
+## 12. Where the black buttons and dial presses are (2026-11-22)
+
+Question: which preset bytes hold the black-button and dial-press settings? Answer: none. Evidence:
+
+- **Audima's app data model.** The field names compiled into "The Sway" 1.2.0 give the whole preset: `Preset { scale, playableLayout, pads, encoders, regionOptions }`, `Pads { rootNotes, chordTypes, rootOctaves, chordInversions, channels }` ("struct Pads with 5 elements") and `Encoders { ccNumbers, channels }`. There is no button field and no per-dial press field.
+- **Byte accounting.** A preset on the wire is 23 bytes of header, 79 bytes per region, 80 bytes of pads (5 x 16) and 128 bytes of encoders (64 CC numbers + 64 channels). Parsing all 36 presets this way consumes the device's project exactly, so there are no spare preset-level bytes. The pad field order in this project's codec matches the app's struct.
+- **What is on the wire** (recording of every control being used, firmware 1.3.0):
+  - Black buttons: Note On/Off for notes 0-7 on MIDI channel 2, velocity 90. Fixed, not affected by the preset.
+  - Dial click: no MIDI message of its own. It selects the dial page; afterwards the dials' CCs arrive on that page's channel (seen on channels 1, 3, 4, 5, 6, 7 in the recording, with page changes 0.1-0.3 s apart and no other message between them).
+  - Pads in the built-in pink layout: notes on channel 1 in the range 0-15, velocity 90. In the custom green layout: the preset's `rootOctave * 12 + rootNote` on the pad's channel.
+- **So "dial press settings" are the encoder channel table**: `channels[page][dial]` is the channel used after dial `page + 1` is clicked. Factory value: page N sends on channel N for every dial, with the same CCs 20-27 on every page.
+- The manual's "pressing a knob sends a second, independent CC" and "mappable buttons send CC, configurable per preset" do not match firmware 1.3.0 or app 1.2.0 as measured here.
+- Still unknown: which physical button sends which of notes 0-7, and region bytes 45-48, 72 and 77.
