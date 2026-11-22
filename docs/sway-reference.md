@@ -129,7 +129,7 @@ Button-level front-panel operation, bank/preset selection keys, display button a
 
 ## 9. From the Audima Labs Discord (read 2026-11-22)
 
-Read in full: #sway, #updates, #software, #technical-support. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
+Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
 
 ### Hardware operation
 - **Power on/off:** press and hold the display encoder (staff, Sep 2025).
@@ -164,3 +164,13 @@ Read in full: #sway, #updates, #software, #technical-support. Staff = Isaac / Je
 - Hardware synths: TRS MIDI out; watch for one-octave note-name offsets between devices.
 - iOS/iPad works over USB-C with the second cable on power.
 - Community projects mentioned: a web-based version of the config app with a shared device library (Dec 2025), a standalone performance app incl. Android (Nov 2026), a Linux user documenting setup (Aug 2025).
+
+### More from #report-a-bug, #feature-request, #setup-sway
+- **Upload Project** sends all 36 presets; **Upload Preset** sends only the active preset and is much faster (staff, Jan 2026).
+- **Pad colours:** pink/purple = default pad mode; other colours appear when the Ableton script is engaged (e.g. red for arm, with solo etc. on other button pages); green = custom "keys" mapping. Pad LED colour is not user-configurable (staff, Mar 2026). Arm only works on MIDI tracks; switch the Sway on before opening Live.
+- Before firmware 1.3.0 the pads and knobs had fixed outputs; 1.3.0 added full customisation of encoders and pads (staff, Jan-Apr 2026).
+- The app has a **channel swap** feature that lets the two sides play different instruments (user, Jul 2026).
+- **Sleep** option on the device: older firmware woke up on its own while the display still said "sleep" (bug acknowledged Dec 2025).
+- Power adapter for the middle port should be USB PD compliant; staff ask "below 35 W?" when diagnosing.
+- No Android/phone app; app is Mac and Windows only (staff, Nov 2025). MIDI in / thru were "being tested" in Sep 2024; the shipped unit has MIDI out only.
+- Requested, not available: sensor sensitivity control (adjacent regions flicker on a 4x3 grid), on-device key/scale selector, X/Y scaling factors, region naming (a show/hide region info toggle is done for the next app update, Jun 2026), sending Program Change, jog-wheel mode, arming several tracks at once.
