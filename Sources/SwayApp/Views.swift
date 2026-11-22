@@ -31,7 +31,6 @@ struct ContentView: View {
         .toolbar {
             ToolbarItemGroup {
                 if model.busy { ProgressView().controlSize(.small) }
-                if model.isDirty { Text("Unsent changes").foregroundStyle(.orange).font(.callout) }
                 Toggle(isOn: $showAll) { Label("All Presets", systemImage: "square.grid.3x3") }
                     .help("Show all 36 presets at once")
                 Button("Switch Sway") { model.activate() }
@@ -92,7 +91,12 @@ struct StatusBar: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Circle().fill(model.state.connected ? Color.green : Color.red).frame(width: 9, height: 9)
-                Text(model.statusText)
+                Text(model.statusText).lineLimit(1)
+                if model.isDirty {
+                    // Shown here rather than in the toolbar, where it squeezed the buttons.
+                    Label("Unsent changes", systemImage: "pencil.circle.fill").foregroundStyle(.orange).fixedSize()
+                        .help("The editor differs from what is stored on the Sway. Send to Sway stores it; Revert discards it.")
+                }
                 Spacer()
                 Text("Brightness").foregroundStyle(.secondary)
                 Slider(value: $model.brightness, in: 0...100) { editing in

@@ -91,9 +91,10 @@ private let helpTopics: [HelpTopic] = [
     HelpTopic(id: "hardware", title: "On the Sway Itself", symbol: "pianokeys", sections: [
         HelpSection(heading: "Display knob", points: [
             "Hold 2 seconds to switch on or off.",
-            "Turn it to move through the outputs of the current preset (X1, Y1 and so on); press to select one, press again to deselect.",
-            "To teach a DAW one output at a time: select it with the knob, move your hand so the DAW learns it, then deselect. While one output is selected the Sway sends only that one, which is the usual reason “only one axis works”.",
-            "SLEEP is one of the options when you turn the knob. It pauses every sensor so you can reach across the Sway; turn the knob again to wake it.",
+            "The screen shows SLEEP, the region number and the bank and preset (for example B1 P2) on its top line, and under that the outputs of the region with their CC numbers (for example X1 50, Y1 38). One item is underlined.",
+            "The knob moves between those items and can select one. Be careful with it: with an output selected, turning the knob changes that output's CC number and the Sway saves the change into the preset. If a controller number has changed by itself, this is why; Reload here shows what the Sway now holds.",
+            "While one output is selected the Sway sends only that output. This is how you teach a DAW one output at a time, and it is also the usual reason “only one axis works”. On the test unit the Sway kept sending a single axis and the knob action that returns it to sending everything was not worked out.",
+            "SLEEP pauses every sensor so you can reach across the Sway. It is one of the items on the screen.",
         ]),
         HelpSection(heading: "Pads, dials and buttons", points: [
             "Pads normally glow pink and send fixed notes (0–15 on MIDI channel 1). Press the bottom-left black button of the right-hand group to switch to the custom mapping stored in the preset; the pads turn green. Press it again to go back. If your pad or dial edits seem to do nothing, this is almost always why.",

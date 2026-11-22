@@ -163,7 +163,7 @@ struct DeviceView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { selected = .button(index) }
-        .help("Small button \(index + 1)"), Geo.buttons[index], s)
+        .help(buttonName(index)), Geo.buttons[index], s)
     }
 
     // MARK: centre display
@@ -272,7 +272,7 @@ struct ControlInspector: View {
                 .padding(6)
             }
         case .button(let index):
-            GroupBox("Small button \(index + 1)") {
+            GroupBox(buttonName(index)) {
                 Text(index == Geo.padLayoutButton
                      ? "This button switches the pads between the built-in pink layout and the custom green layout stored in the preset. A short press does it; it sends no MIDI, so it cannot be mapped."
                      : "The black buttons are not part of a preset, so there is nothing to edit: this one always sends note \(index) on MIDI channel 2, which you can map in your DAW with MIDI learn.")
@@ -290,4 +290,9 @@ func padName(_ index: Int) -> String {
 /// Audima's app letters the eight dial pages A to H.
 func pageName(_ page: Int) -> String {
     (0..<8).contains(page) ? String(UnicodeScalar(UInt8(65 + page))) : "\(page + 1)"
+}
+
+/// "Black button · left group, top right" — numbered across the top row, then the bottom row.
+func buttonName(_ index: Int) -> String {
+    "Black button · \(index % 4 < 2 ? "left" : "right") group, \(index < 4 ? "top" : "bottom") \(index % 2 == 0 ? "left" : "right")"
 }
