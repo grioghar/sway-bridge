@@ -267,8 +267,8 @@ struct Inspector: View {
                         NumberField(value: $region.ledEnd.optional, range: 0...SwayLayout.ledCount)
                     }
                 }
-                row("Invert X") { Toggle("", isOn: $region.invertX).labelsHidden() }
-                row("Clear on release") { Toggle("", isOn: $region.clearModulationOnRelease).labelsHidden() }
+                row("Invert horizontal axis") { Toggle("", isOn: $region.invertX).labelsHidden() }
+                row("Clear CC on release") { Toggle("", isOn: $region.clearModulationOnRelease).labelsHidden() }
             }
             .padding(6)
         }

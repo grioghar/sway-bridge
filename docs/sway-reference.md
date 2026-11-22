@@ -194,4 +194,49 @@ Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #fe
 - No OSC output; MIDI only (staff, Feb 2026). Outdoors: keep direct sunlight off the sensors; stage lights and lasers do not interfere (staff, Feb 2026).
 - Power on: long-press the big round knob at the display.
 - Third-party: github.com/gantasmo/theDAW advertises Sway features (Jun 2026); not examined.
-- **Manual:** https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manual.pdf (linked from the Tutorials page). Not yet read.
+- **Manual:** https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manual.pdf (linked from the Tutorials page). Summarised in section 10.
+
+## 10. From the official User Manual (PDF, 37 pages, (c) 2026, read 2026-11-22)
+
+Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manual.pdf . Paraphrased; where it differs from Discord posts the manual is listed as the reference and the difference is noted.
+
+### Front panel
+- **Scroll-Click Wheel** (the knob at the display): long-press 2 s to power on, long-press 2 s to power off. Scroll to move through the on-device parameters/axes; press to select; press again to deselect.
+- **Always power off with the wheel before unplugging**: unplugging while powered on "may cause preset corruption".
+- **Preset buttons 1-6:** press to load that preset of the active bank. **Bank change is two steps: hold any preset button until the display shows bank selection, then press 1-6 to choose the bank.** (Discord staff describe it as holding button N for ~2 s to go to bank N; try both on the unit.)
+- **Display:** Instrument region shows Note / Voicing / Oct; Modulation shows Axis / CC / Y1; Trigger shows Trigger / Y; second hand shows X2 / Y2; `B1P3` = bank 1 preset 3; `SLEEP` = sensors paused.
+- **SLEEP mode:** pauses all sensors. Scroll the wheel through the axes; SLEEP is one of the options; scroll again to an axis to wake.
+- **Click knobs (x8):** turning sends a CC; **pressing a knob sends a second, independent CC**. CC number and channel are set per knob.
+- **Drum pads (16):** send a note; not velocity sensitive by default; notes/chords set in the app's Encoder & Pad Mapping.
+- **Mappable buttons:** "assignable buttons that send MIDI CC values. Configurable per preset."
+- **MIDI-learning one axis at a time:** scroll the wheel to X1 or Y1, press to select, move your hand so the DAW learns it, then **press again to deselect**. While an axis is selected the Sway outputs only that axis; forgetting to deselect is the most common mapping mistake.
+
+### Regions
+- Two modes: **Instrument (I)** triggers a note or chord on entry and shows LED columns; **Modulation (M)** sends CCs and shows a single tracking dot. (This project's "Notes" mode is Audima's Instrument.)
+- Layouts named in the manual: 4x3 (12 regions), 4x2, 2x2, 4x1, 1x1, 2x3 + XY, 3x3 + Y, 2x3 + dual Y.
+- Modulation types: 1D fader (one axis), 2D fader (X and Y), **X-Trigger / Y modulation** (a trigger CC fires on entry, Y is continuous). X and Y each take any CC on any channel 1-16. **X2 / Y2** are the second hand's CCs, used when **Link Hands** is switched off; they must differ from the first hand's CCs. This explains the "second copy" of the X and Y CCs in the preset data.
+- **Invert Horizontal Axis** reverses X output and the LED animation. **Clear CC on Release** resets the CC to 0 when the hand leaves.
+- Instrument settings: voicing Unison or a chord (Major, Minor, Sus2, Sus4, Diminished, Augmented, more); inversion root / 1st / 2nd.
+- Gestures, enabled per Instrument region: **Strike** velocity from entry speed (automatic, no mapping); **Sway** shake left-right gives rate of change on a CC; **Pulse** raising the hand after a note raises a CC; **Press** pushing down sends a CC **or Aftertouch**; **Glide / MPE** each note on its own channel, sliding between regions bends pitch (toggle in Scale Selection, then Apply to Regions); **Sculpt** notes with one hand, modulation with the other.
+
+### App
+- Task bar: preset name, Reset Region Order, Scale Selection (piano icon: scale, key, Assign to Regions, MPE toggle), Encoder/Pad Mapping (knob icon).
+- Device menu: Push Preset, Push Project (overwrites all 36), Pull Preset (active one), Pull Project.
+- Project files are named `.swayproj.json` in the manual. (The file saved by app 1.2.0 on this Mac was a binary `.swayproj`; unresolved.)
+- LED colours: start and end colour per region; black start = dark until played. Brightness: Cmd-] and Cmd-[ in the app.
+- Copy/swap presets by right-click; Cmd/Ctrl-drag a region to copy it, plain drag to swap. Propagate Pads / Propagate Encoders copy that mapping to all presets.
+- Presets may be cleared by major firmware updates; save the project first.
+
+### Program Change (receive)
+- A MIDI clip routed to the Sway with **Bank and Program set to the target bank and preset number** switches preset when played.
+- **Bank 0, Program 37 = enter SLEEP; Bank 0, Program 38 = exit SLEEP.**
+
+### Hardware
+- Ports: MIDI out **TRS Type A** (left), USB-C power in (middle; wall adapter rated under 35 W), USB-C host data+power (right). Class-compliant USB MIDI on macOS, Windows 10+ and Linux.
+- The manual says the LED beam has 16 RGB LEDs; the device's own data and the press say 80 addressable LEDs. 16 sensors.
+- Base project: 36 presets, all in B minor. Banks: 1 founder's favourites, 2 instrument layouts, 3 instruments + expressions, 4 notes + modulation, 5 one modulation feature each, 6 one gesture each (6-1 Pulse, 6-2 Press, 6-3 Sway, 6-4 Glide/MPE, 6-5 Sculpt, 6-6 Strike).
+
+### Open questions this raises for the project
+- Where the knob-press CCs and the mappable-button CCs live in the preset bytes (candidates: the three unexplained 16-byte arrays after the pad notes, and region bytes 45-48, 72, 77).
+- Whether the idle "notes 0-14" seen on the wire were knob presses or buttons in the default (non-custom) mode.
+- The exact Bank/Program numbering for preset switching (needs MIDI output from the bridge to test).

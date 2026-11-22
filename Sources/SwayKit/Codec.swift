@@ -17,7 +17,7 @@ public enum SwayLayout {
     /// Region coordinate space.
     public static let sensorWidth: Float = 41.43
     public static let sensorDepth: Float = 36.0
-    public static let modes = ["Modulation", "Notes", "Trigger"]
+    public static let modes = ["Modulation", "Instrument", "Trigger"]   // Audima's names: M, I, X-Trigger
     public static let scales = ["Major", "Minor", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Locrian", "Chromatic", "Custom"]
 }
 

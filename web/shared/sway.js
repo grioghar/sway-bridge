@@ -1,7 +1,7 @@
 // Shared client for the Sway bridge: one reconnecting WebSocket, state + MIDI events,
 // request/response commands, and helpers that turn raw MIDI into "which control moved".
 
-export const MODES = ['Modulation', 'Notes', 'Trigger'];
+export const MODES = ['Modulation', 'Instrument', 'Trigger'];
 export const SCALES = ['Major', 'Minor', 'Dorian', 'Phrygian', 'Lydian', 'Mixolydian', 'Locrian', 'Chromatic', 'Custom'];
 export const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 export const FIELD_WIDTH = 41.43;   // region coordinate space

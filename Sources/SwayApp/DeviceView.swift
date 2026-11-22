@@ -181,7 +181,7 @@ struct DeviceView: View {
                 }
                 .contentShape(Circle())
                 .onTapGesture { choosePreset(i) }
-                .help("Edit preset \(i + 1) of this bank. On the Sway: press for the preset, hold about 2 seconds for bank \(i + 1)."),
+                .help("Edit preset \(i + 1) of this bank. On the Sway: press for the preset; hold a preset button to enter bank selection, then press 1-6 for the bank."),
                       CGRect(x: d.minX + 15 + CGFloat(i) * 38, y: d.minY + 13, width: 22, height: 22), s)
             }
             place(ZStack {
