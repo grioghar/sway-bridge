@@ -56,7 +56,7 @@ public struct Region: Codable, Equatable {
     public var clearModulationOnRelease: Bool
     public var invertX: Bool
     public var polyphonicExpression: Bool   // MPE / Glide
-    public var retriggerMotion: Bool        // "retriggerMotion" in Audima's app; off in every factory preset
+    public var retriggerMotion: Bool        // "retriggerMotion" in Audima's app; off in every factory preset, effect untested
     public var raw: [UInt8]?             // original bytes, kept so untouched regions re-encode identically
 
     enum CodingKeys: String, CodingKey {
