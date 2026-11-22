@@ -232,13 +232,34 @@ public final class Bridge {
 
     /// Program Change 0-35 selects bank * 6 + preset (found by experiment on firmware 1.3.0;
     /// 36 and 37 are sleep and wake). Confirmed afterwards over the serial link.
+    ///
+    /// Firmware 1.3.0 has a side effect: entering a preset by Program Change overwrites the chord
+    /// type of every region with the first region's (seen on a factory preset whose regions had
+    /// different chord types). So the preset is read back afterwards and, if the Sway changed it,
+    /// the original is uploaded again; an upload also makes the preset active and leaves it intact.
     private func activate(bank: Int, preset: Int) throws {
         guard (0...5).contains(bank), (0...5).contains(preset) else { throw BridgeError(description: "no such preset slot") }
-        try midiOut.send([0xc0, UInt8(bank * SwayLayout.presetsPerBank + preset)])
+        let index = bank * SwayLayout.presetsPerBank + preset
+        let before = state.project.flatMap { index < $0.presets.count ? $0.presets[index].encoded() : nil }
+        try midiOut.send([0xc0, UInt8(index)])
         Thread.sleep(forTimeInterval: 0.3)
-        let now = try withClient { try $0.selection() }
-        state.selection = now
-        guard now == PresetSelection(bank: bank, preset: preset) else {
+        try withClient { client in
+            state.selection = try client.selection()
+            guard let before else { return }
+            var raw = try client.readProject()
+            var fresh = try Project(bytes: raw)
+            if index < fresh.presets.count, fresh.presets[index].encoded() != before {
+                log("the Sway altered bank \(bank + 1) preset \(preset + 1) on Program Change; restoring it")
+                backup(raw, name: "project-altered-by-program-change")
+                try client.writePreset(bank: bank, preset: preset, bytes: before)
+                raw = try client.readProject()
+                fresh = try Project(bytes: raw)
+                state.selection = try client.selection()
+            }
+            state.project = fresh
+            backup(raw, name: "project")
+        }
+        guard state.selection == PresetSelection(bank: bank, preset: preset) else {
             throw BridgeError(description: "the Sway did not switch preset (is its firmware 1.3.0 or later?)")
         }
     }
