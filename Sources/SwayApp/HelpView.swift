@@ -68,7 +68,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "On the Sway", points: [
             "Press one of the six round buttons at the display to load that preset of the current bank.",
-            "To change bank, hold a preset button until the display shows bank selection, then press 1–6. Audima staff also describe holding button 3, say, for about 2 seconds to jump straight to bank 3.",
+            "To change bank, hold preset button 3, say, for about 2 seconds to go to bank 3. That is how Audima's videos and staff describe it; their newer manual says to hold any preset button until the display shows bank selection, then press 1–6.",
             "This window follows the Sway: when you change preset on the hardware, the editor moves to it unless you have unsent changes.",
         ]),
     ]),
@@ -94,7 +94,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "Pads, dials and buttons", points: [
             "Pads normally glow pink and send fixed notes. Hold the bottom-left black button of the right-hand group for 3 seconds to switch to the custom mapping stored in the preset; the pads turn green. If your pad or dial edits seem to do nothing, this is almost always why.",
-            "Each dial also clicks: pressing it sends a second, separate CC.",
+            "Clicking a dial changes the dial page: click dial 2 and all eight dials send on page B, dial 3 for page C, and so on; click dial 1 to return to page A. That gives 64 controls from eight dials. (Audima's manual also describes a dial press as sending its own CC.)",
             "The eight black buttons have no fixed job and can be mapped in your DAW. With Audima's Ableton script they move around Session view and launch or stop scenes.",
             "The pads take a firm press. Their contacts are at the outer edge, so pressing near an edge works better than the middle.",
         ]),
