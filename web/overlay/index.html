@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sway Overlay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* OBS browser source: transparent page, the drawing scales to the source width.
+     Options (combine with &):
+       style=outline   hardware drawn as outlines only, so video shows through
+       field=full      filled region boxes above the hardware (default with the solid style)
+       field=levels    thin hand-level lines only (default with style=outline)
+       field=0         no hand display at all
+       demo=1          synthetic performance, for positioning the source
+       bg=%23202020    test backdrop colour */
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  svg { display: block; width: 100vw; height: auto; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .body { fill: #0c0c0f; fill-opacity: .92; stroke: #2a2a31; stroke-width: 1.5; }
+  .panel { fill: #050507; stroke: #24242b; }
+  .well { fill: #15151a; stroke: #2b2b33; }
+  .label { fill: #8b8b98; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+  .value { fill: #f2f2f5; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .title { fill: #f2f2f5; font-size: 22px; font-weight: 600; }
+  .sub { fill: #a6a6b3; font-size: 13px; }
+  .region-name { fill: #fff; font-size: 13px; font-weight: 600; paint-order: stroke; stroke: #000; stroke-opacity: .55; stroke-width: 3px; }
+  .region-info { fill: #fff; fill-opacity: .8; font-size: 11px; paint-order: stroke; stroke: #000; stroke-opacity: .5; stroke-width: 3px; }
+  .offline { fill: #ff6b6b; font-size: 13px; font-weight: 600; }
+  .level-label { fill: #fff; font-size: 11px; font-variant-numeric: tabular-nums; paint-order: stroke; stroke: #000; stroke-opacity: .6; stroke-width: 3px; }
+  /* Outline style: no fills, light strokes, text keeps a dark edge so it reads over video. */
+  .outline .body { fill: none; stroke: #fff; stroke-opacity: .45; }
+  .outline .panel, .outline .well { fill: none; stroke: #fff; stroke-opacity: .6; stroke-width: 1.5; }
+  .outline text { paint-order: stroke; stroke: #000; stroke-opacity: .6; stroke-width: 3px; }
+  .outline .label, .outline .sub { fill: #fff; fill-opacity: .85; }
+</style>
+</head>
+<body>
+<svg id="stage" viewBox="0 0 1280 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Live view of the Sway controller"></svg>
+<script type="module">
+import { SwayLink, buildMidiMap, startDemo, noteName, MODES, SCALES, FIELD_WIDTH, FIELD_DEPTH, LED_COUNT } from '../shared/sway.js';
+
+const query = new URLSearchParams(location.search);
+if (query.get('bg')) document.body.style.background = query.get('bg');
+const outline = query.get('style') === 'outline';
+const fieldMode = { 0: 'off', off: 'off', full: 'full', levels: 'levels' }[query.get('field')] ?? (outline ? 'levels' : 'full');
+const showField = fieldMode !== 'off';
+const LED_OFF = outline ? 'none' : '#1d1d23';
+const stage = document.getElementById('stage');
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent = stage, text) => {
+  const node = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text != null) node.textContent = text;
+  parent.appendChild(node);
+  return node;
+};
+if (!showField) stage.setAttribute('viewBox', '0 220 1280 300');
+if (outline) stage.classList.add('outline');
+
+// ---------- geometry ----------
+const FIELD = { x: 60, y: 16, w: 1160, h: 190 };
+const STRIP = { x: 60, y: 246, w: 1160, h: 10 };
+const PAD = 58, GAP = 12;
+const cluster = (left) => {
+  const x0 = left ? 76 : 1280 - 76 - (4 * PAD + 3 * GAP);
+  return {
+    dials: [0, 1, 2, 3].map((i) => ({ x: x0 + PAD / 2 + i * (PAD + GAP), y: 318 })),
+    pads: [0, 1].flatMap((row) => [0, 1, 2, 3].map((col) => ({ x: x0 + col * (PAD + GAP), y: 356 + row * (PAD + GAP) }))),
+    buttons: [0, 1].flatMap((row) => [0, 1].map((col) => ({
+      x: (left ? x0 + 4 * (PAD + GAP) + 6 : x0 - 2 * 38 - 2) + col * 38, y: 410 + row * 30 }))),
+  };
+};
+const LEFT = cluster(true), RIGHT = cluster(false);
+const DIALS = [...LEFT.dials, ...RIGHT.dials];
+const PADS = [...LEFT.pads, ...RIGHT.pads];
+const BUTTONS = [...LEFT.buttons, ...RIGHT.buttons];
+const DISPLAY = { x: 500, y: 330, w: 280, h: 150 };
+
+// ---------- static drawing ----------
+const fieldLayer = el('g');
+el('rect', { class: 'body', x: 20, y: 228, width: 1240, height: 280, rx: 22 });
+const ledLayer = el('g');
+const leds = Array.from({ length: LED_COUNT }, (_, i) => el('rect', {
+  x: STRIP.x + i * (STRIP.w / LED_COUNT) + 0.75, y: STRIP.y, width: STRIP.w / LED_COUNT - 1.5, height: STRIP.h, rx: 2, fill: LED_OFF, stroke: outline ? '#fff' : 'none', 'stroke-opacity': .35, 'stroke-width': .75 }, ledLayer));
+for (let i = 0; i < 16; i++) el('rect', { class: 'well', x: STRIP.x + 26 + i * ((STRIP.w - 52 - 24) / 15), y: 272, width: 24, height: 9, rx: 4.5 });
+
+const dialNodes = DIALS.map((d, i) => {
+  const g = el('g', { transform: `translate(${d.x} ${d.y})` });
+  el('circle', { class: 'well', r: 17 }, g);
+  const arc = el('path', { fill: 'none', stroke: '#c44dff', 'stroke-width': 4, 'stroke-linecap': 'round', opacity: 0 }, g);
+  const tick = el('line', { x1: 0, y1: -4, x2: 0, y2: -13, stroke: '#e9e9ee', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, g);
+  const value = el('text', { class: 'value', y: -24, 'text-anchor': 'middle', opacity: 0 }, g, '');
+  return { arc, tick, value, last: 0, v: null };
+});
+const padNodes = PADS.map((p) => {
+  const rect = el('rect', { class: 'well', x: p.x, y: p.y, width: PAD, height: PAD, rx: 9 });
+  const glow = el('rect', { x: p.x, y: p.y, width: PAD, height: PAD, rx: 9, fill: '#e24bff', opacity: 0 });
+  const text = el('text', { class: 'value', x: p.x + PAD / 2, y: p.y + PAD / 2 + 5, 'text-anchor': 'middle', opacity: .55 }, stage, '');
+  return { rect, glow, text, level: 0, held: false };
+});
+const buttonNodes = BUTTONS.map((b) => {
+  el('rect', { class: 'well', x: b.x, y: b.y, width: 32, height: 22, rx: 5 });
+  return { glow: el('rect', { x: b.x, y: b.y, width: 32, height: 22, rx: 5, fill: '#ffffff', opacity: 0 }), level: 0, held: false };
+});
+
+el('rect', { class: 'panel', x: DISPLAY.x, y: DISPLAY.y, width: DISPLAY.w, height: DISPLAY.h, rx: 10 });
+const presetDots = [0, 1, 2, 3, 4, 5].map((i) => el('circle', { class: 'well', cx: DISPLAY.x + 26 + i * 38, cy: DISPLAY.y + 24, r: 11 }));
+const encoder = el('circle', { class: 'well', cx: DISPLAY.x + DISPLAY.w - 26, cy: DISPLAY.y + 24, r: 15 });
+const bankText = el('text', { class: 'value', x: DISPLAY.x + DISPLAY.w - 26, y: DISPLAY.y + 29, 'text-anchor': 'middle' }, stage, '');
+const title = el('text', { class: 'title', x: DISPLAY.x + 16, y: DISPLAY.y + 78 }, stage, '');
+const sub = el('text', { class: 'sub', x: DISPLAY.x + 16, y: DISPLAY.y + 102 }, stage, '');
+const other = el('text', { class: 'sub', x: DISPLAY.x + 16, y: DISPLAY.y + 132 }, stage, '');
+const offline = el('text', { class: 'offline', x: 640, y: 222, 'text-anchor': 'middle' }, stage, '');
+
+// ---------- per-preset drawing ----------
+let preset = null, midiMap = buildMidiMap(null), regionNodes = [], presetKey = '';
+
+function drawPreset() {
+  fieldLayer.replaceChildren();
+  regionNodes = [];
+  leds.forEach((l) => { l.setAttribute('fill', LED_OFF); l.setAttribute('fill-opacity', 1); l.dataset.base = ''; });
+  if (!preset) return;
+  if (fieldMode === 'full') el('rect', { x: FIELD.x, y: FIELD.y, width: FIELD.w, height: FIELD.h, rx: 12, fill: '#0c0c0f', 'fill-opacity': outline ? 0 : .55, stroke: outline ? '#ffffff66' : '#2a2a31' }, fieldLayer);
+  preset.regions.slice(0, preset.regionCount).forEach((r, i) => {
+    const x = FIELD.x + (r.xMin / FIELD_WIDTH) * FIELD.w, w = ((r.xMax - r.xMin) / FIELD_WIDTH) * FIELD.w;
+    const y = FIELD.y + (1 - r.yMax / FIELD_DEPTH) * FIELD.h, h = ((r.yMax - r.yMin) / FIELD_DEPTH) * FIELD.h;
+    const node = { r, x, y, w, h, vx: null, vy: null, gate: false, held: 0, last: -1e9, level: 0 };
+    if (fieldMode === 'full') {
+      const id = `g${i}`;
+      const grad = el('linearGradient', { id, x1: 0, y1: 1, x2: 0, y2: 0 }, fieldLayer);
+      el('stop', { offset: 0, 'stop-color': r.colorStart }, grad);
+      el('stop', { offset: 1, 'stop-color': r.colorEnd === '#000000' ? r.colorStart : r.colorEnd }, grad);
+      node.rect = el('rect', { x: x + 3, y: y + 3, width: Math.max(0, w - 6), height: Math.max(0, h - 6), rx: 8, fill: `url(#${id})`, 'fill-opacity': outline ? 0 : .22, stroke: r.colorStart, 'stroke-opacity': .8, 'stroke-width': outline ? 1.5 : 1 }, fieldLayer);
+      node.dot = el('circle', { r: 9, fill: '#fff', stroke: r.colorStart, 'stroke-width': 3, opacity: 0 }, fieldLayer);
+      const small = h < 50;
+      el('text', { class: 'region-name', x: x + 12, y: y + (small ? 19 : 22) }, fieldLayer, describe(r));
+      node.info = el('text', { class: 'region-info', x: x + 12, y: y + (small ? 33 : 38) }, fieldLayer, '');
+    } else if (fieldMode === 'levels') {
+      // Minimal hand display: a floor tick per region, and a thin line that sits at the
+      // hand's height (Y) with a bead at its left-right position (X). Nothing is filled.
+      const pad = 6, floor = y + h - 3;
+      el('line', { x1: x + pad, y1: floor, x2: x + w - pad, y2: floor, stroke: r.colorStart, 'stroke-width': 1.5, 'stroke-opacity': .55, 'stroke-linecap': 'round' }, fieldLayer);
+      for (const edge of [x + pad, x + w - pad]) el('line', { x1: edge, y1: floor, x2: edge, y2: floor - 7, stroke: r.colorStart, 'stroke-width': 1.5, 'stroke-opacity': .55, 'stroke-linecap': 'round' }, fieldLayer);
+      node.line = el('line', { x1: x + pad, x2: x + w - pad, y1: floor, y2: floor, stroke: r.colorStart, 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0, style: `filter: drop-shadow(0 0 4px ${r.colorStart})` }, fieldLayer);
+      node.dot = el('circle', { r: 5, fill: '#fff', stroke: r.colorStart, 'stroke-width': 2, opacity: 0 }, fieldLayer);
+      node.levelText = el('text', { class: 'level-label', x: x + w - pad - 2, 'text-anchor': 'end', opacity: 0 }, fieldLayer, '');
+      node.pad = pad;
+    }
+    for (let led = r.ledStart; led < Math.min(r.ledEnd, LED_COUNT); led++) leds[led].dataset.base = r.colorStart;
+    node.leds = leds.slice(r.ledStart, Math.min(r.ledEnd, LED_COUNT));
+    regionNodes.push(node);
+  });
+  padNodes.forEach((p, i) => { p.text.textContent = noteName(preset.pads.rootOctaves[i] * 12 + preset.pads.rootNotes[i]); });
+}
+
+function describe(r) {
+  if (r.mode === 1) return r.notes.length ? r.notes.slice(0, 4).map(noteName).join(' ') + (r.notes.length > 4 ? ' …' : '') : 'Notes';
+  const parts = [];
+  if (r.ccX != null) parts.push(`${r.mode === 2 ? 'Trig' : 'X'} CC${r.ccX}`);
+  if (r.ccY != null) parts.push(`Y CC${r.ccY}`);
+  return parts.join(' · ') || MODES[r.mode] || '';
+}
+
+function applyState(state) {
+  const sel = state?.selection, project = state?.project;
+  const next = project && sel ? project.presets[sel.bank * 6 + sel.preset] : null;
+  const key = next ? JSON.stringify([sel, next.name, next.regionCount, next.regions.map((r) => r._raw)]) : '';
+  if (key !== presetKey) { presetKey = key; preset = next; midiMap = buildMidiMap(preset); drawPreset(); }
+  title.textContent = preset?.name ?? '';
+  sub.textContent = preset ? `Bank ${sel.bank + 1} · Preset ${sel.preset + 1} · ${SCALES[preset.scale] ?? ''}` : '';
+  bankText.textContent = sel ? sel.bank + 1 : '';
+  presetDots.forEach((d, i) => { d.style.fill = sel?.preset === i ? '#c44dff' : ''; });
+  offline.textContent = state?.connected || demo ? '' : 'Sway offline';
+}
+
+// ---------- live MIDI ----------
+const now = () => performance.now();
+function onMidi(m) {
+  const hits = midiMap.lookup(m);
+  if (!hits) {
+    const type = m[0] & 0xf0, ch = (m[0] & 15) + 1;
+    // Provisional: the eight small buttons appear to send notes 0-7 on channel 2.
+    if ((type === 0x90 || type === 0x80) && ch === 2 && m[1] < 8) {
+      const b = buttonNodes[m[1]];
+      b.held = type === 0x90 && m[2] > 0;
+      if (b.held) b.level = 1;
+    } else if (type === 0xb0) other.textContent = `CC ${m[1]} · ch ${ch} · ${m[2]}`;
+    else if (type === 0x90 && m[2] > 0) other.textContent = `${noteName(m[1])} · ch ${ch}`;
+    return;
+  }
+  for (const hit of hits) {
+    if (hit.kind === 'dial') {
+      const d = dialNodes[hit.index];
+      d.v = hit.value; d.last = now(); d.page = hit.page;
+    } else if (hit.kind === 'pad') {
+      const p = padNodes[hit.index];
+      p.held = hit.on;
+      if (hit.on) p.level = 1;
+    } else if (hit.kind === 'region') {
+      const n = regionNodes[hit.index];
+      if (!n) continue;
+      n.last = now();
+      if (hit.role === 'note') n.held = Math.max(0, n.held + (hit.on ? 1 : -1));
+      else if (hit.role === 'x' && n.r.mode === 2) n.gate = hit.value > 0;
+      else if (hit.role === 'x') n.vx = (n.r.invertX ? 127 - hit.value : hit.value) / 127;
+      else if (hit.role === 'y') n.vy = hit.value / 127;
+      else n[hit.role] = hit.value;
+      n.lastRole = hit.role; n.lastValue = hit.value;
+    }
+  }
+}
+
+function frame() {
+  const t = now();
+  for (const d of dialNodes) {
+    if (d.v == null) continue;
+    const angle = -135 + (d.v / 127) * 270, rad = (a) => ((a - 90) * Math.PI) / 180;
+    d.tick.setAttribute('transform', `rotate(${angle})`);
+    const a0 = rad(-135), a1 = rad(angle), R = 21;
+    d.arc.setAttribute('d', `M ${R * Math.cos(a0)} ${R * Math.sin(a0)} A ${R} ${R} 0 ${angle > 45 ? 1 : 0} 1 ${R * Math.cos(a1)} ${R * Math.sin(a1)}`);
+    const fresh = Math.max(0, 1 - (t - d.last) / 1800);
+    d.arc.setAttribute('opacity', 0.35 + 0.65 * fresh);
+    d.value.textContent = d.v;
+    d.value.setAttribute('opacity', fresh);
+  }
+  for (const p of [...padNodes, ...buttonNodes]) {
+    if (!p.held) p.level = Math.max(0, p.level - 0.06);
+    p.glow.setAttribute('opacity', p.level * (outline ? 0.55 : 0.95));
+  }
+  for (const n of regionNodes) {
+    const active = n.gate || n.held > 0 || t - n.last < 350;
+    n.level += ((active ? 1 : 0) - n.level) * 0.25;
+    for (const led of n.leds) {
+      if (outline) { led.setAttribute('fill', led.dataset.base || 'none'); led.setAttribute('fill-opacity', 0.9 * n.level); }
+      else led.setAttribute('fill', mix('#1d1d23', led.dataset.base || '#1d1d23', 0.28 + 0.72 * n.level));
+    }
+    const hasX = n.vx != null, hasY = n.vy != null;
+    if (n.rect) {
+      n.rect.setAttribute('fill-opacity', outline ? 0.28 * n.level : 0.22 + 0.5 * n.level);
+      if (hasX || hasY) {
+        n.dot.setAttribute('cx', n.x + 12 + (hasX ? n.vx : 0.5) * (n.w - 24));
+        n.dot.setAttribute('cy', n.y + n.h - 12 - (hasY ? n.vy : 0.5) * (n.h - 24));
+        n.dot.setAttribute('opacity', n.level);
+      }
+      if (n.lastRole && n.info) n.info.textContent = n.level > 0.05
+        ? (n.lastRole === 'note' ? (n.held ? 'playing' : '') : `${n.lastRole} ${n.lastValue}`) : '';
+    } else if (n.line) {
+      // No height data (note-only regions): the line sits a little above the floor while active.
+      const height = hasY ? n.vy : 0.12;
+      const ly = n.y + n.h - 3 - height * (n.h - 12);
+      n.line.setAttribute('y1', ly); n.line.setAttribute('y2', ly);
+      n.line.setAttribute('opacity', n.level);
+      n.dot.setAttribute('cx', n.x + n.pad + (hasX ? n.vx : 0.5) * (n.w - 2 * n.pad));
+      n.dot.setAttribute('cy', ly);
+      n.dot.setAttribute('opacity', hasX ? n.level : 0);
+      n.levelText.setAttribute('y', ly - 6);
+      n.levelText.setAttribute('opacity', hasY ? n.level : 0);
+      if (hasY) n.levelText.textContent = Math.round(n.vy * 127);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function mix(a, b, k) {
+  const p = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const [x, y] = [p(a), p(b)];
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * k).toString(16).padStart(2, '0')).join('');
+}
+
+// ---------- wiring ----------
+const demo = query.get('demo') === '1';
+const link = new SwayLink();
+let stopDemo = null;
+link.addEventListener('state', (e) => {
+  applyState(e.detail);
+  if (demo) { stopDemo?.(); stopDemo = startDemo(onMidi, preset); }
+});
+link.addEventListener('close', () => applyState({ ...link.state, connected: false }));
+if (!demo) link.addEventListener('midi', (e) => onMidi(e.detail));
+applyState(null);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

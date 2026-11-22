@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sway Configurator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #101014; --panel: #18181e; --raised: #22222a; --line: #30303a; --text: #ececf1; --dim: #9a9aa8;
+    --accent: #c44dff; --accent-ink: #14041c; --warn: #ffb454; --bad: #ff6b6b; --ok: #5dd39e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--dim); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--bad); }
+  .dot.on { background: var(--ok); }
+  .spacer { flex: 1; }
+  main { display: grid; grid-template-columns: 250px minmax(0, 1fr) 320px; gap: 16px; padding: 16px 20px; align-items: start; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  h2 { font-size: 11px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; font-weight: 600; }
+  button, select, input { font: inherit; color: inherit; }
+  button { background: var(--raised); border: 1px solid var(--line); border-radius: 7px; padding: 6px 12px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--dim); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 650; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input[type=text], input[type=number], select { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 100%; min-width: 0; }
+  input[type=color] { width: 44px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
+  input[type=range] { width: 130px; accent-color: var(--accent); }
+  .bank { display: grid; grid-template-columns: 22px 1fr; gap: 4px 8px; align-items: center; margin-bottom: 8px; }
+  .bank > span { color: var(--dim); font-size: 12px; text-align: center; }
+  .presets { display: grid; gap: 3px; }
+  .preset { text-align: left; padding: 5px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+  .preset.live { border-color: var(--ok); }
+  .preset.open { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .field { position: relative; width: 100%; aspect-ratio: 41.43 / 22; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .region { position: absolute; border: 2px solid; border-radius: 7px; margin: 0; padding: 6px 8px; text-align: left; font-size: 12px; overflow: hidden; background-clip: padding-box; }
+  .region.sel { outline: 3px solid #fff; outline-offset: -2px; z-index: 1; }
+  .region b { display: block; font-size: 13px; }
+  .region.hot { filter: brightness(1.7); }
+  .row { display: grid; grid-template-columns: 118px 1fr; gap: 8px; align-items: center; margin-bottom: 7px; }
+  .row > label { color: var(--dim); }
+  .pair { display: flex; gap: 6px; align-items: center; }
+  .grid8 { display: grid; grid-template-columns: 34px repeat(8, minmax(0, 1fr)); gap: 4px; align-items: center; font-size: 12px; }
+  .grid8 input { padding: 4px 2px; text-align: center; }
+  .grid8 .hd { color: var(--dim); text-align: center; }
+  .cell.hot input { border-color: var(--ok); box-shadow: 0 0 0 1px var(--ok); }
+  .bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .note { color: var(--dim); font-size: 12px; margin: 8px 0 0; }
+  .msg { padding: 8px 12px; border-radius: 7px; background: var(--raised); border: 1px solid var(--line); }
+  .msg.bad { border-color: var(--bad); color: var(--bad); }
+  .msg.ok { border-color: var(--ok); }
+  .dirty { color: var(--warn); }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--dim); }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sway Configurator</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="status">Connecting…</span></div>
+  <div class="spacer"></div>
+  <label class="status">Brightness <input type="range" id="brightness" min="0" max="100" disabled></label>
+  <button id="reload" disabled>Reload from Sway</button>
+</header>
+<div id="banner" class="msg bad hidden" style="margin: 12px 20px 0"></div>
+<main>
+  <section>
+    <h2>Presets</h2>
+    <div id="banks"></div>
+    <p class="note">Green outline: the preset active on the Sway (change it on the hardware). Click any preset to edit it; click the active one again to follow the hardware.</p>
+  </section>
+
+  <div style="display: grid; gap: 16px">
+    <section>
+      <div class="bar" style="margin-bottom: 10px">
+        <input type="text" id="name" maxlength="19" style="max-width: 260px" aria-label="Preset name">
+        <select id="scale" style="max-width: 150px" aria-label="Scale"></select>
+        <span id="dirty" class="dirty"></span>
+        <div class="spacer"></div>
+        <button id="revert" disabled>Revert</button>
+        <button id="send" class="primary" disabled>Send to Sway</button>
+      </div>
+      <div class="field" id="field"></div>
+      <p class="note">Regions as they sit above the Sway (left to right, low to high). Regions light up as you play them. Changing the layout itself is not supported yet.</p>
+      <div id="result" class="msg hidden" style="margin-top: 10px"></div>
+    </section>
+    <section>
+      <h2>Pads</h2>
+      <div class="grid8" id="pads"></div>
+      <h2 style="margin-top: 16px">Dials — CC number per page</h2>
+      <div class="grid8" id="dials"></div>
+      <details><summary>Dial channels</summary><div class="grid8" id="dialch" style="margin-top: 8px"></div></details>
+    </section>
+  </div>
+
+  <section id="inspector">
+    <h2 id="rtitle">Region</h2>
+    <div id="rbody"></div>
+  </section>
+</main>
+
+<script type="module">
+import { SwayLink, buildMidiMap, canonical, noteName, NOTE_NAMES, MODES, SCALES, FIELD_WIDTH, FIELD_DEPTH, PRESETS_PER_BANK } from '../shared/sway.js';
+
+const $ = (id) => document.getElementById(id);
+const h = (tag, props = {}, ...kids) => {
+  const n = Object.assign(document.createElement(tag), props);
+  for (const k of kids.flat()) n.append(k);
+  return n;
+};
+const link = new SwayLink();
+let open = null;        // { bank, preset } being edited
+let draft = null;       // edited copy of the open preset
+let region = 0;         // selected region index
+let midiMap = buildMidiMap(null);
+const stored = () => (open && link.state?.project ? link.state.project.presets[open.bank * PRESETS_PER_BANK + open.preset] : null);
+const isDirty = () => !!draft && !!stored() && canonical(draft) !== canonical(stored());
+let follow = true;     // keep the editor on whichever preset is active on the Sway
+
+SCALES.forEach((s, i) => $('scale').append(h('option', { value: i, textContent: s })));
+
+// ---------- state from the bridge ----------
+link.addEventListener('state', () => {
+  const s = link.state;
+  $('dot').classList.toggle('on', !!s.connected);
+  $('status').textContent = s.connected
+    ? `Sway connected · firmware ${s.device.firmware}${s.device.lowPower ? ' · low-power mode' : ''}${s.midiConnected ? '' : ' · no MIDI'}`
+    : 'Sway not connected';
+  $('banner').classList.toggle('hidden', !s.error);
+  $('banner').textContent = s.error ?? '';
+  $('reload').disabled = !s.connected;
+  $('brightness').disabled = !s.connected;
+  if (s.device?.brightness != null && document.activeElement !== $('brightness')) $('brightness').value = s.device.brightness;
+  if (s.project && !isDirty()) {
+    // Follow the hardware's active preset unless the user picked another one to edit.
+    const live = s.selection;
+    if (live && (follow || !open) && (open?.bank !== live.bank || open?.preset !== live.preset)) { open = { ...live }; region = 0; }
+    if (open) draft = structuredClone(stored());
+  }
+  render();
+});
+link.addEventListener('close', () => { $('dot').classList.remove('on'); $('status').textContent = 'Bridge not running — start sway-bridge'; });
+
+// Live feedback: flash whatever control the incoming MIDI belongs to.
+link.addEventListener('midi', (e) => {
+  for (const hit of midiMap.lookup(e.detail) ?? []) {
+    const id = hit.kind === 'region' ? `region-${hit.index}` : hit.kind === 'pad' ? `pad-${hit.index}` : `dial-${hit.page}-${hit.index}`;
+    const node = $(id);
+    if (!node) continue;
+    node.classList.add('hot');
+    clearTimeout(node._t);
+    node._t = setTimeout(() => node.classList.remove('hot'), 180);
+  }
+});
+
+// ---------- rendering ----------
+function render() {
+  renderBanks();
+  const has = !!draft;
+  for (const id of ['name', 'scale']) $(id).disabled = !has;
+  if (!has) { $('field').replaceChildren(); $('rbody').replaceChildren(); return; }
+  if (document.activeElement !== $('name')) $('name').value = draft.name;
+  $('scale').value = draft.scale;
+  midiMap = buildMidiMap(draft);
+  renderField(); renderInspector(); renderPads(); renderDials();
+  const dirty = isDirty();
+  $('dirty').textContent = dirty ? 'Unsent changes' : '';
+  $('send').disabled = !dirty || !link.state?.connected;
+  $('revert').disabled = !dirty;
+}
+
+function renderBanks() {
+  const s = link.state, box = $('banks');
+  box.replaceChildren();
+  if (!s?.project) return;
+  for (let b = 0; b < 6; b++) {
+    const list = h('div', { className: 'presets' });
+    for (let p = 0; p < PRESETS_PER_BANK; p++) {
+      const preset = s.project.presets[b * PRESETS_PER_BANK + p];
+      const btn = h('button', { className: 'preset', textContent: `${p + 1}  ${preset.name || '(unnamed)'}`, title: preset.name });
+      if (s.selection?.bank === b && s.selection?.preset === p) btn.classList.add('live');
+      if (open?.bank === b && open?.preset === p) btn.classList.add('open');
+      btn.onclick = () => choose(b, p);
+      list.append(btn);
+    }
+    box.append(h('div', { className: 'bank' }, h('span', { textContent: b + 1, title: `Bank ${b + 1}` }), list));
+  }
+}
+
+function choose(bank, preset) {
+  if (isDirty() && !confirm('Discard unsent changes to this preset?')) return;
+  const live = link.state?.selection;
+  follow = live?.bank === bank && live?.preset === preset;
+  open = { bank, preset }; region = 0;
+  draft = structuredClone(stored());
+  render();
+}
+
+function label(r) {
+  if (r.mode === 1) return r.notes.length ? r.notes.slice(0, 5).map(noteName).join(' ') : 'no notes';
+  return [r.ccX != null && `${r.mode === 2 ? 'Trig' : 'X'} ${r.ccX}`, r.ccY != null && `Y ${r.ccY}`].filter(Boolean).join(' · ') || 'unassigned';
+}
+
+function renderField() {
+  const field = $('field');
+  field.replaceChildren();
+  draft.regions.slice(0, draft.regionCount).forEach((r, i) => {
+    const b = h('button', { className: 'region' + (i === region ? ' sel' : ''), id: `region-${i}` },
+      h('b', { textContent: `R${i + 1} · ${MODES[r.mode] ?? r.mode}` }), label(r));
+    Object.assign(b.style, {
+      left: `${(r.xMin / FIELD_WIDTH) * 100}%`, width: `${((r.xMax - r.xMin) / FIELD_WIDTH) * 100}%`,
+      bottom: `${(r.yMin / FIELD_DEPTH) * 100}%`, height: `${((r.yMax - r.yMin) / FIELD_DEPTH) * 100}%`,
+      borderColor: r.colorStart, background: `linear-gradient(to top, ${r.colorStart}66, ${(r.colorEnd === '#000000' ? r.colorStart : r.colorEnd)}55)`,
+    });
+    b.onclick = () => { region = i; render(); };
+    field.append(b);
+  });
+}
+
+// One labelled control bound to a property of `target`.
+function row(text, control) { return h('div', { className: 'row' }, h('label', { textContent: text }), control); }
+function number(target, key, { min = 0, max = 127, optional = false, step = 1 } = {}) {
+  const input = h('input', { type: 'number', min, max, step, value: target[key] ?? '', placeholder: optional ? 'off' : '' });
+  input.onchange = () => {
+    if (input.value === '' && optional) delete target[key];
+    else target[key] = Math.min(max, Math.max(min, Number(input.value)));
+    // The preset stores the X and Y CCs twice; keep the second copy in step.
+    for (const twin of ['ccX', 'ccY']) if (key === twin) { if (target[twin] == null) delete target[twin + '2']; else target[twin + '2'] = target[twin]; }
+    render();
+  };
+  return input;
+}
+function check(target, key) {
+  const input = h('input', { type: 'checkbox', checked: !!target[key] });
+  input.onchange = () => { target[key] = input.checked; render(); };
+  return input;
+}
+function color(target, key) {
+  const input = h('input', { type: 'color', value: target[key] });
+  input.onchange = () => { target[key] = input.value; render(); };
+  return input;
+}
+
+function renderInspector() {
+  const r = draft.regions[region], body = $('rbody');
+  $('rtitle').textContent = `Region ${region + 1} of ${draft.regionCount}`;
+  body.replaceChildren();
+  if (!r) return;
+  const mode = h('select', {}, MODES.map((m, i) => h('option', { value: i, textContent: m, selected: i === r.mode })));
+  mode.onchange = () => { r.mode = Number(mode.value); render(); };
+  body.append(row('Mode', mode));
+
+  if (r.mode === 1) {
+    const notes = h('input', { type: 'text', value: r.notes.map(noteName).join(' '), placeholder: 'e.g. C3 E3 G3' });
+    notes.onchange = () => {
+      const parsed = notes.value.trim().split(/[\s,]+/).filter(Boolean).map(parseNote);
+      if (parsed.some((n) => n == null) || parsed.length > 15) { show('Notes look like C3, F#4 or a number 0–127 (up to 15).', true); notes.value = r.notes.map(noteName).join(' '); return; }
+      r.notes = parsed; r.noteCount = parsed.length;
+      r.noteChannels = parsed.map((_, i) => r.noteChannels[i] ?? r.noteChannels[0] ?? 0);
+      if (parsed.length) { r.rootNote = parsed[0] % 12; r.rootOctave = Math.floor(parsed[0] / 12); }
+      render();
+    };
+    const channel = h('input', { type: 'number', min: 1, max: 16, value: (r.noteChannels[0] ?? 0) + 1 });
+    channel.onchange = () => { r.noteChannels = r.notes.map(() => Math.min(16, Math.max(1, Number(channel.value))) - 1); render(); };
+    body.append(row('Notes', notes), row('Note channel', channel));
+  }
+  body.append(
+    row(r.mode === 2 ? 'Trigger CC' : 'X CC', number(r, 'ccX', { optional: true })),
+    row('Y CC', number(r, 'ccY', { optional: true })),
+    row('Sway CC', number(r, 'swayCc', { optional: true })),
+    row('Pulse CC', number(r, 'pulseCc', { optional: true })),
+    row('Press CC', number(r, 'pressCc', { optional: true })),
+    row('Strike threshold', number(r, 'strikeThreshold', { min: 0, max: 1, step: 0.05, optional: true })),
+    row('Colours', h('div', { className: 'pair' }, color(r, 'colorStart'), '→', color(r, 'colorEnd'))),
+    row('LEDs', h('div', { className: 'pair' }, number(r, 'ledStart', { max: 80 }), 'to', number(r, 'ledEnd', { max: 80 }))),
+    row('Invert X', check(r, 'invertX')),
+    row('Clear on release', check(r, 'clearModulationOnRelease')),
+  );
+}
+
+function parseNote(text) {
+  if (/^\d+$/.test(text)) { const n = Number(text); return n <= 127 ? n : null; }
+  const m = /^([A-Ga-g])([#b]?)(-?\d)$/.exec(text);
+  if (!m) return null;
+  const n = NOTE_NAMES.indexOf(m[1].toUpperCase()) + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (Number(m[3]) + 1) * 12;
+  return n >= 0 && n <= 127 ? n : null;
+}
+
+function cell(id, value, onchange, min = 0, max = 127) {
+  const input = h('input', { type: 'number', min, max, value });
+  input.onchange = () => { onchange(Math.min(max, Math.max(min, Number(input.value)))); render(); };
+  return h('div', { className: 'cell', id }, input);
+}
+
+function renderPads() {
+  const box = $('pads'), p = draft.pads;
+  box.replaceChildren();
+  for (const half of [0, 8]) {
+    box.append(h('div', { className: 'hd', textContent: half ? 'R' : 'L' }),
+      ...Array.from({ length: 8 }, (_, i) => h('div', { className: 'hd', textContent: `${i + 1} · ${noteName(p.rootOctaves[half + i] * 12 + p.rootNotes[half + i])}` })));
+    box.append(h('div', { className: 'hd', textContent: 'note' }),
+      ...Array.from({ length: 8 }, (_, i) => cell(`pad-${half + i}`, p.rootOctaves[half + i] * 12 + p.rootNotes[half + i],
+        (v) => { p.rootNotes[half + i] = v % 12; p.rootOctaves[half + i] = Math.floor(v / 12); })));
+    box.append(h('div', { className: 'hd', textContent: 'ch' }),
+      ...Array.from({ length: 8 }, (_, i) => cell(`padch-${half + i}`, p.channels[half + i] + 1, (v) => { p.channels[half + i] = v - 1; }, 1, 16)));
+  }
+}
+
+function renderDials() {
+  for (const [id, key, base, prefix] of [['dials', 'ccNumbers', 0, 'dial'], ['dialch', 'channels', 1, 'dialch']]) {
+    const box = $(id), grid = draft.encoders[key];
+    box.replaceChildren(h('div', { className: 'hd', textContent: 'page' }), ...Array.from({ length: 8 }, (_, i) => h('div', { className: 'hd', textContent: `dial ${i + 1}` })));
+    grid.forEach((rowValues, page) => {
+      box.append(h('div', { className: 'hd', textContent: page + 1 }),
+        ...rowValues.map((v, i) => cell(`${prefix}-${page}-${i}`, v + base, (n) => { grid[page][i] = n - base; }, base, base ? 16 : 127)));
+    });
+  }
+}
+
+function show(text, bad = false) {
+  const box = $('result');
+  box.textContent = text;
+  box.className = 'msg ' + (bad ? 'bad' : 'ok');
+  clearTimeout(show.t);
+  show.t = setTimeout(() => box.classList.add('hidden'), 6000);
+}
+
+// ---------- actions ----------
+$('name').oninput = () => { draft.name = $('name').value; delete draft._nameRaw; render(); };
+$('scale').onchange = () => { draft.scale = Number($('scale').value); render(); };
+$('revert').onclick = () => { draft = structuredClone(stored()); render(); };
+$('reload').onclick = async () => {
+  if (isDirty() && !confirm('Discard unsent changes and reload everything from the Sway?')) return;
+  draft = null;
+  try { await link.call('refresh'); show('Reloaded from the Sway.'); } catch (e) { show(e.message, true); }
+};
+$('brightness').onchange = async () => {
+  try { await link.call('setBrightness', { value: Number($('brightness').value) }); } catch (e) { show(e.message, true); }
+};
+$('send').onclick = async () => {
+  $('send').disabled = true;
+  try {
+    await link.call('writePreset', { ...open, data: draft });
+    draft = structuredClone(stored());
+    show(`Sent to bank ${open.bank + 1}, preset ${open.preset + 1} and verified by reading it back.`);
+  } catch (e) { show(`Not sent: ${e.message}`, true); }
+  render();
+};
+window.addEventListener('beforeunload', (e) => { if (isDirty()) e.preventDefault(); });
+</script>
+</body>
+</html>

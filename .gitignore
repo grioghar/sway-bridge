@@ -1,0 +1,8 @@
+.build/
+dist/
+backups/
+.DS_Store
+*.xcodeproj
+.swiftpm/
+__pycache__/
+scripts/signing.local.sh
