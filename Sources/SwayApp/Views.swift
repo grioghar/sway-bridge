@@ -146,7 +146,7 @@ struct Editor: View {
                     }
                     .frame(maxWidth: 220)
                     Picker("Dial page", selection: $dialPage) {
-                        ForEach(0..<8, id: \.self) { Text("\($0 + 1)").tag($0) }
+                        ForEach(0..<8, id: \.self) { Text(pageName($0)).tag($0) }
                     }
                     .pickerStyle(.segmented).frame(maxWidth: 330)
                     Spacer()

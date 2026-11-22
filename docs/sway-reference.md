@@ -125,3 +125,14 @@ Key sources:
 ## Not found (summary)
 
 Button-level front-panel operation, bank/preset selection keys, display button and encoder functions, dial pages, low-power, brightness, calibration, factory reset, Modulation/Notes/Trigger modes, Strike threshold, X/Y definitions, invert, clear-on-release, LED colour behaviour, scale and chord-type lists, inversion, root/octave, per-pad MIDI channel, CC defaults, Max for Live, MPE, MIDI implementation chart, detection range, power consumption, firmware changelog, firmware procedure (PDF unread), user manual, forums.
+
+
+## 9. From the Audima Labs Discord (#sway channel, read 2026-11-22)
+
+Statements by Audima staff ("Isaac | Audima Labs") unless noted; only the most recent few months of one channel were read.
+
+- **Dial CC and channel** are editable in the Sway app: "click the knob icon which is above the layout/regions" (3 Oct 2026). This opens an "Encoder and Pad Mapping" panel.
+- **Custom mapping must be switched on at the hardware:** after pushing the project to the device, "click this button on Sway to switch to the custom Encoder and Pad Mapping ... (the pads will turn green)" (4 Oct 2026). The button marked in the screenshot is one of the four small buttons on the right-hand side (bottom row, column nearer the pads). [Reading of a small screenshot: confirm on the unit.]
+- **Encoder and Pad Mapping panel** (from the screenshot): dial pages are lettered **A–H**; each dial has a CC and a channel (defaults CC 20–27, channel 1). Pads are numbered across the whole top row first (left four, then right four), then the bottom row; defaults run chromatically C0…D#1. A "Pad Configuration" box sets Scale, Key, Octave, Default channel and Output type (e.g. Chord) with "Apply to pads", and "Click a pad to override chord". "Propagate encoders" / "Propagate pads" buttons copy the mapping (presumably to all presets). The four small buttons each side are drawn hatched, i.e. not configurable, as two columns of upright keys beside the pads.
+- A user asked for a jog-wheel style feature (15 Aug 2026); no answer seen.
+- Not yet read: older history of #sway, and #software, #technical-support, #report-a-bug, #faq beyond the latest page.

@@ -19,13 +19,11 @@ private enum Geo {
     static let dials: [CGPoint] = [true, false].flatMap { left in
         (0..<4).map { CGPoint(x: origin(left: left) + pad / 2 + CGFloat($0) * (pad + gap), y: 318) }
     }
-    /// Pad frames: two rows of four per side, left cluster then right.
-    static let pads: [CGRect] = [true, false].flatMap { left in
-        (0..<2).flatMap { row in
-            (0..<4).map { col in
-                CGRect(x: origin(left: left) + CGFloat(col) * (pad + gap), y: 356 + CGFloat(row) * (pad + gap), width: pad, height: pad)
-            }
-        }
+    /// Pad frames in preset order. Audima's own pad panel numbers them across the whole top
+    /// row first (left four, then right four), then across the bottom row.
+    static let pads: [CGRect] = (0..<16).map { i in
+        let row = i / 8, col = i % 8
+        return CGRect(x: origin(left: col < 4) + CGFloat(col % 4) * (pad + gap), y: 356 + CGFloat(row) * (pad + gap), width: pad, height: pad)
     }
     /// Small buttons: per side, a 2 x 2 block of narrow upright keys right beside the pads,
     /// lined up with the two pad rows (from Audima's product renders).
@@ -151,7 +149,7 @@ struct DeviceView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { selected = .pad(index) }
-        .help("\(index < 8 ? "Left" : "Right") pad \(index % 8 + 1)"), Geo.pads[index], s)
+        .help(padName(index)), Geo.pads[index], s)
     }
 
     private func button(at index: Int, scale s: CGFloat) -> some View {
@@ -194,7 +192,7 @@ struct DeviceView: View {
             place(VStack(alignment: .leading, spacing: 4 * s) {
                 Text(preset.name.isEmpty ? "(unnamed)" : preset.name).font(.system(size: 20 * s, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
                 Text("Bank \((open?.bank ?? 0) + 1) · Preset \((open?.preset ?? 0) + 1) · \(scale)").font(.system(size: 12 * s)).foregroundStyle(Color(white: 0.7))
-                Text("Dial page \(dialPage + 1)").font(.system(size: 12 * s)).foregroundStyle(Color(white: 0.5))
+                Text("Dial page \(pageName(dialPage))").font(.system(size: 12 * s)).foregroundStyle(Color(white: 0.5))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .allowsHitTesting(false), CGRect(x: d.minX + 16, y: d.minY + 54, width: d.width - 32, height: 86), s)
@@ -218,7 +216,7 @@ struct ControlInspector: View {
                 Text("This preset has no regions.").foregroundStyle(.secondary)
             }
         case .pad(let index):
-            GroupBox("\(index < 8 ? "Left" : "Right") pad \(index % 8 + 1)") {
+            GroupBox(padName(index)) {
                 if [draft.pads.rootNotes, draft.pads.rootOctaves, draft.pads.channels].allSatisfy({ index < $0.count }) {
                     Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 7) {
                         GridRow {
@@ -246,7 +244,7 @@ struct ControlInspector: View {
                     GridRow {
                         Text("Page").foregroundStyle(.secondary)
                         ForEach(draft.encoders.ccNumbers.indices, id: \.self) { page in
-                            Text("\(page + 1)").fontWeight(page == dialPage ? .bold : .regular)
+                            Text(pageName(page)).fontWeight(page == dialPage ? .bold : .regular)
                                 .foregroundStyle(page == dialPage ? Color.accentColor : Color.secondary)
                         }
                     }
@@ -272,9 +270,19 @@ struct ControlInspector: View {
             }
         case .button(let index):
             GroupBox("Small button \(index + 1)") {
-                Text("What the small buttons send is not stored in the part of the preset that is understood yet, so they cannot be edited here. They light up on this drawing when pressed.")
+                Text("The small buttons are not configurable in Audima's app either. According to Audima, one of the right-hand ones switches the pads and dials to the custom mapping stored in the preset (the pads turn green).")
                     .foregroundStyle(.secondary).padding(6).frame(maxWidth: 420, alignment: .leading)
             }
         }
     }
+}
+
+/// "Pad 3 · top row, left" — pads are numbered across the top row, then the bottom row.
+func padName(_ index: Int) -> String {
+    "Pad \(index + 1) · \(index < 8 ? "top" : "bottom") row, \(index % 8 < 4 ? "left" : "right")"
+}
+
+/// Audima's app letters the eight dial pages A to H.
+func pageName(_ page: Int) -> String {
+    (0..<8).contains(page) ? String(UnicodeScalar(UInt8(65 + page))) : "\(page + 1)"
 }

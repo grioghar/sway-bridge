@@ -72,7 +72,8 @@ const cluster = (left) => {
 };
 const LEFT = cluster(true), RIGHT = cluster(false);
 const DIALS = [...LEFT.dials, ...RIGHT.dials];
-const PADS = [...LEFT.pads, ...RIGHT.pads];
+// Preset order runs across the whole top row (left four, right four), then the bottom row.
+const PADS = [...LEFT.pads.slice(0, 4), ...RIGHT.pads.slice(0, 4), ...LEFT.pads.slice(4), ...RIGHT.pads.slice(4)];
 const BUTTONS = [...LEFT.buttons, ...RIGHT.buttons];
 const DISPLAY = { x: 500, y: 330, w: 280, h: 150 };
 
