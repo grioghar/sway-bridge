@@ -304,6 +304,7 @@ Question: which preset bytes hold the black-button and dial-press settings? Answ
 - **What is on the wire** (recording of every control being used, firmware 1.3.0):
   - Black buttons: Note On/Off for notes 0-7 on MIDI channel 2, velocity 90. Fixed, not affected by the preset.
   - Dial click: no MIDI message of its own. It selects the dial page; afterwards the dials' CCs arrive on that page's channel (seen on channels 1, 3, 4, 5, 6, 7 in the recording, with page changes 0.1-0.3 s apart and no other message between them).
+    Controlled check 2026-11-22: clicking dial 2 moved the dials from channel 4 to channel 2 (page B), and the app's drawing followed. The page is remembered: the Sway was still on page D from an earlier session.
   - Pads in the built-in pink layout: notes on channel 1 in the range 0-15, velocity 90. In the custom green layout: the preset's `rootOctave * 12 + rootNote` on the pad's channel.
 - **So "dial press settings" are the encoder channel table**: `channels[page][dial]` is the channel used after dial `page + 1` is clicked. Factory value: page N sends on channel N for every dial, with the same CCs 20-27 on every page.
 - The manual's "pressing a knob sends a second, independent CC" and "mappable buttons send CC, configurable per preset" do not match firmware 1.3.0 or app 1.2.0 as measured here.
