@@ -181,7 +181,7 @@ struct DeviceView: View {
                 }
                 .contentShape(Circle())
                 .onTapGesture { choosePreset(i) }
-                .help("Edit preset \(i + 1) of this bank"),
+                .help("Edit preset \(i + 1) of this bank. On the Sway: press for the preset, hold about 2 seconds for bank \(i + 1)."),
                       CGRect(x: d.minX + 15 + CGFloat(i) * 38, y: d.minY + 13, width: 22, height: 22), s)
             }
             place(ZStack {
@@ -270,7 +270,7 @@ struct ControlInspector: View {
             }
         case .button(let index):
             GroupBox("Small button \(index + 1)") {
-                Text("The small buttons are not configurable in Audima's app either. According to Audima, one of the right-hand ones switches the pads and dials to the custom mapping stored in the preset (the pads turn green).")
+                Text("By default these buttons have no fixed job and can be MIDI-mapped freely; Audima's Ableton script uses them to move around Session view and launch or stop scenes. On the right-hand group, holding the bottom-left button for 3 seconds switches the pads and dials to the custom mapping stored in the preset (the pads turn green).")
                     .foregroundStyle(.secondary).padding(6).frame(maxWidth: 420, alignment: .leading)
             }
         }

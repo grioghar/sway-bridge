@@ -129,7 +129,7 @@ Button-level front-panel operation, bank/preset selection keys, display button a
 
 ## 9. From the Audima Labs Discord (read 2026-11-22)
 
-Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway, #faq, #sway-tutorials, #ideas, #design-talk. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
+Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway, #faq, #sway-tutorials, #ideas, #design-talk; #general-chat back to Feb 2026 only. Not read: #musicians, #producers, #djs, #launch-chat, #studio-setup, #sway-content, #newcomers, the batch/shipping channels, threads, and attachments (images, videos, files). Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
 
 ### Hardware operation
 - **Power on/off:** press and hold the display encoder (staff, Sep 2025).
@@ -186,3 +186,12 @@ Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #fe
 - No output range scaling (e.g. 0-64) on the device; scale in the DAW or with a MIDI translator (users, 2026). Rekordbox cannot map one CC to several functions; Serato can; users rely on Bome MIDI Translator and similar for Rekordbox/Traktor.
 - Pad LEDs cannot be driven over MIDI in; requested for DJ feedback (Jul-Sep 2026), staff "can look into" it.
 - A community member built a web companion tool that writes the official `.swayproj` file format with a shareable "device library" of CC charts (Dec 2025); Audima's developer said they would rather integrate device libraries into the official app.
+
+### From #general-chat (Feb-Nov 2026)
+- **Pad modes:** "cycle through the pads till they turn green" puts them in note mode, playable like a piano (moderator, Jun 2026); see the 3-second hold on the right-hand bottom-left black button above.
+- **The four black buttons per side** with the Ableton script: navigate Session view and launch/stop scenes; without the script they are free to map (staff, Jun 2026). Users find them more precise than the pads for split-second cues; the pads' contacts are at their outer edge and cannot be calibrated.
+- Presets are created and edited only in the app, then pushed and stored on the device (staff, Feb 2026). Preset changes can be automated from MIDI clips via Program Change.
+- No OSC output; MIDI only (staff, Feb 2026). Outdoors: keep direct sunlight off the sensors; stage lights and lasers do not interfere (staff, Feb 2026).
+- Power on: long-press the big round knob at the display.
+- Third-party: github.com/gantasmo/theDAW advertises Sway features (Jun 2026); not examined.
+- **Manual:** https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manual.pdf (linked from the Tutorials page). Not yet read.
