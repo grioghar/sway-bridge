@@ -93,9 +93,9 @@ private let helpTopics: [HelpTopic] = [
             "SLEEP is one of the options when you turn the knob. It pauses every sensor so you can reach across the Sway; turn the knob again to wake it.",
         ]),
         HelpSection(heading: "Pads, dials and buttons", points: [
-            "Pads normally glow pink and send fixed notes. Hold the bottom-left black button of the right-hand group for 3 seconds to switch to the custom mapping stored in the preset; the pads turn green. If your pad or dial edits seem to do nothing, this is almost always why.",
+            "Pads normally glow pink and send fixed notes (0–15 on MIDI channel 1). Press the bottom-left black button of the right-hand group to switch to the custom mapping stored in the preset; the pads turn green. Press it again to go back. If your pad or dial edits seem to do nothing, this is almost always why.",
             "Clicking a dial changes the dial page: click dial 2 and all eight dials send on page B, dial 3 for page C, and so on; click dial 1 to return to page A. That gives 64 controls from eight dials. (Audima's manual also describes a dial press as sending its own CC.)",
-            "The eight black buttons always send notes 0–7 on MIDI channel 2 (measured on firmware 1.3.0), whatever the preset, so map them in your DAW with MIDI learn. With Audima's Ableton script they move around Session view and launch or stop scenes.",
+            "Seven of the eight black buttons send a note on MIDI channel 2, whatever the preset: left group 0 and 1 on top, 4 and 5 below; right group 2 and 3 on top, 7 at bottom right. Map them in your DAW with MIDI learn. The eighth, bottom left of the right group, is the pink/green pad switch and sends nothing.",
             "The pads take a firm press. Their contacts are at the outer edge, so pressing near an edge works better than the middle.",
         ]),
         HelpSection(heading: "Power", points: [

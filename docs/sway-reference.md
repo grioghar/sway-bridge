@@ -307,4 +307,16 @@ Question: which preset bytes hold the black-button and dial-press settings? Answ
   - Pads in the built-in pink layout: notes on channel 1 in the range 0-15, velocity 90. In the custom green layout: the preset's `rootOctave * 12 + rootNote` on the pad's channel.
 - **So "dial press settings" are the encoder channel table**: `channels[page][dial]` is the channel used after dial `page + 1` is clicked. Factory value: page N sends on channel N for every dial, with the same CCs 20-27 on every page.
 - The manual's "pressing a knob sends a second, independent CC" and "mappable buttons send CC, configurable per preset" do not match firmware 1.3.0 or app 1.2.0 as measured here.
-- Still unknown: which physical button sends which of notes 0-7, and region bytes 45-48, 72 and 77.
+- Still unknown: region bytes 45-48, 72 and 77.
+
+### Button test on the hardware (2026-11-22, firmware 1.3.0, no DAW script running)
+Each black button pressed once in a known order, with the Sway's MIDI recorded:
+
+| Group | Top-left | Top-right | Bottom-left | Bottom-right |
+| --- | --- | --- | --- | --- |
+| Left | note 0 | note 1 | note 4 | note 5 |
+| Right | note 2 | note 3 | no MIDI: pad layout switch | note 7 |
+
+- All on MIDI channel 2, velocity 90, note-off on release. The numbering runs across the top row then the bottom row, like the pads; note 6 is never sent.
+- **The right group's bottom-left button toggles the pads between pink (built-in) and green (custom) with a short press.** A long press does nothing. (Audima staff wrote "press and hold 3 s" on Discord; that is not how this unit behaves.)
+- Pads, same two pads pressed in each layout: green sent the preset's notes (66 and 67 for pads 5 and 6 of bank 6 preset 6); pink sent notes 4 and 5 on channel 1. So in the pink layout a pad sends its own index, 0-15, in the same order as the custom layout.

@@ -74,7 +74,9 @@ const LEFT = cluster(true), RIGHT = cluster(false);
 const DIALS = [...LEFT.dials, ...RIGHT.dials];
 // Preset order runs across the whole top row (left four, right four), then the bottom row.
 const PADS = [...LEFT.pads.slice(0, 4), ...RIGHT.pads.slice(0, 4), ...LEFT.pads.slice(4), ...RIGHT.pads.slice(4)];
-const BUTTONS = [...LEFT.buttons, ...RIGHT.buttons];
+// Numbered like the pads (measured): top row left pair 0-1, right pair 2-3, then bottom row 4-5, 6-7.
+// Button 6 (right group, bottom-left) switches the pad layout and sends no MIDI.
+const BUTTONS = [...LEFT.buttons.slice(0, 2), ...RIGHT.buttons.slice(0, 2), ...LEFT.buttons.slice(2), ...RIGHT.buttons.slice(2)];
 const DISPLAY = { x: 500, y: 330, w: 280, h: 150 };
 
 // ---------- static drawing ----------

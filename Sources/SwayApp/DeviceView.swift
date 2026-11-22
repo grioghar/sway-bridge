@@ -25,14 +25,17 @@ private enum Geo {
         let row = i / 8, col = i % 8
         return CGRect(x: origin(left: col < 4) + CGFloat(col % 4) * (pad + gap), y: 356 + CGFloat(row) * (pad + gap), width: pad, height: pad)
     }
-    /// Small buttons: per side, a 2 x 2 block of narrow upright keys right beside the pads,
-    /// lined up with the two pad rows (from Audima's product renders).
-    static let buttons: [CGRect] = [true, false].flatMap { left -> [CGRect] in
+    /// Black buttons: per side, a 2 x 2 block of narrow upright keys right beside the pads, lined
+    /// up with the two pad rows. Numbered like the pads, as measured on the hardware: across the
+    /// top row (left pair 0-1, right pair 2-3), then the bottom row (left 4-5, right 6-7).
+    static let buttons: [CGRect] = (0..<8).map { i in
+        let row = i / 4, col = i % 4, left = col < 2
         let x0 = left ? origin(left: true) + 4 * (pad + gap) : origin(left: false) - gap - 2 * 26 - 8
-        return (0..<2).flatMap { row in
-            (0..<2).map { col in CGRect(x: x0 + CGFloat(col) * 34, y: 356 + CGFloat(row) * (pad + gap), width: 26, height: pad) }
-        }
+        return CGRect(x: x0 + CGFloat(col % 2) * 34, y: 356 + CGFloat(row) * (pad + gap), width: 26, height: pad)
     }
+    /// The right-hand bottom-left button switches the pads between the built-in (pink) and custom
+    /// (green) layouts and sends no MIDI.
+    static let padLayoutButton = 6
 }
 
 struct DeviceView: View {
@@ -270,7 +273,9 @@ struct ControlInspector: View {
             }
         case .button(let index):
             GroupBox("Small button \(index + 1)") {
-                Text("The black buttons are not part of a preset, so there is nothing to edit: this one always sends note \(index) on MIDI channel 2, which you can map in your DAW. (Which physical button is which number has not been checked; press one and watch which lights up here.) On the right-hand group, holding the bottom-left button for 3 seconds switches the pads and dials to the custom mapping stored in the preset; the pads turn green.")
+                Text(index == Geo.padLayoutButton
+                     ? "This button switches the pads between the built-in pink layout and the custom green layout stored in the preset. A short press does it; it sends no MIDI, so it cannot be mapped."
+                     : "The black buttons are not part of a preset, so there is nothing to edit: this one always sends note \(index) on MIDI channel 2, which you can map in your DAW with MIDI learn.")
                     .foregroundStyle(.secondary).padding(6).frame(maxWidth: 420, alignment: .leading)
             }
         }

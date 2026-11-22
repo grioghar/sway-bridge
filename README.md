@@ -34,8 +34,8 @@ from a retail unit on firmware 1.3.0; other firmware versions may differ.
 
 Known gaps: changing a preset's region layout is not supported; a few bytes of the preset
 format are not yet understood (they are preserved untouched). The eight black buttons and the
-dial clicks are not preset settings: the buttons send notes 0-7 on channel 2 and a dial click
-selects the dial page.
+dial clicks are not preset settings: seven buttons send fixed notes on channel 2, the eighth
+switches the pad layout, and a dial click selects the dial page.
 
 ## Running
 
