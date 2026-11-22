@@ -378,8 +378,22 @@ struct Inspector: View {
                     }
                 }
                 Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
-                    row(region.mode == 2 ? "Trigger CC" : "X CC") { NumberField(value: $region.ccX, optional: true) }
-                    row("Y CC") { NumberField(value: $region.ccY, optional: true) }
+                    row(region.mode == 2 ? "Trigger CC" : "X CC") {
+                        HStack(spacing: 4) {
+                            NumberField(value: $region.ccX, optional: true)
+                            Text("ch").foregroundStyle(.secondary).fixedSize()
+                            NumberField(value: Binding(get: { region.channelX + 1 }, set: { if let v = $0 { region.channelX = v - 1 } }), range: 1...16)
+                                .help("MIDI channel for this controller")
+                        }
+                    }
+                    row("Y CC") {
+                        HStack(spacing: 4) {
+                            NumberField(value: $region.ccY, optional: true)
+                            Text("ch").foregroundStyle(.secondary).fixedSize()
+                            NumberField(value: Binding(get: { region.channelY + 1 }, set: { if let v = $0 { region.channelY = v - 1 } }), range: 1...16)
+                                .help("MIDI channel for this controller")
+                        }
+                    }
                     row("Sway CC") { NumberField(value: $region.swayCc, optional: true) }
                     row("Pulse CC") { NumberField(value: $region.pulseCc, optional: true) }
                     row("Press CC") { NumberField(value: $region.pressCc, optional: true) }
@@ -388,12 +402,14 @@ struct Inspector: View {
                     row("LEDs") {
                         HStack(spacing: 4) {
                             NumberField(value: $region.ledStart.optional, range: 0...SwayLayout.ledCount)
-                            Text("to").foregroundStyle(.secondary)
+                            Text("to").foregroundStyle(.secondary).fixedSize()
                             NumberField(value: $region.ledEnd.optional, range: 0...SwayLayout.ledCount)
                         }
                     }
                     row("Invert X") { Toggle("", isOn: $region.invertX).labelsHidden().help("Invert the horizontal axis and its LED animation") }
                     row("Clear on release") { Toggle("", isOn: $region.clearModulationOnRelease).labelsHidden().help("Reset the CC to 0 when the hand leaves") }
+                    row("MPE (Glide)") { Toggle("", isOn: $region.polyphonicExpression).labelsHidden().help("Each note on its own channel, so sliding between regions bends pitch. Your instrument must have MPE switched on too.") }
+                    row("Retrigger motion") { Toggle("", isOn: $region.retriggerMotion).labelsHidden().help("A setting in the Sway's data whose effect has not been tested; it is off in every factory preset") }
                 }
                 Spacer(minLength: 0)
             }

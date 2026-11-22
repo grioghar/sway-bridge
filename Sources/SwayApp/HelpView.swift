@@ -41,7 +41,9 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "Regions", points: [
             "Mode: Instrument plays notes when a hand enters; Modulation sends controller (CC) values as the hand moves; Trigger sends one CC on entry and a continuous one for height.",
             "Notes: type names such as C3 E3 G3, or numbers 0–127, then press Return. Up to 15.",
-            "X CC and Y CC are the controllers for left–right and up–down. Leave a box empty to switch that output off.",
+            "X CC and Y CC are the controllers for left–right and up–down, each with its own MIDI channel (the “ch” box). Leave a CC box empty to switch that output off.",
+            "MPE (Glide) puts each note on its own channel so sliding between regions bends pitch; the instrument you play must have MPE switched on too.",
+            "Retrigger motion is a setting stored by the Sway whose effect has not been tested here. It is off in every factory preset.",
             "Sway, Pulse and Press CC are the extra gestures: shaking side to side, lifting after a note, and pushing down.",
             "Colours set the LED gradient for the region; LEDs sets which part of the light bar it uses.",
             "Changing how the field is divided into regions (the layout) is not supported yet. Use Audima's app for that.",
@@ -125,7 +127,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "About", points: [
             "Sway Bridge is an independent project and is not made or endorsed by Audima Labs. It was built against firmware 1.3.0; other versions may behave differently.",
-            "A few bytes in each region are not understood yet; Sway Bridge leaves them exactly as they were. The black buttons and dial clicks are not preset settings at all: the buttons always send notes 0–7 on MIDI channel 2, and a dial click only changes dial page.",
+            "Every byte of a preset is now accounted for. The black buttons and dial clicks are not preset settings at all: seven buttons always send fixed notes on MIDI channel 2, one switches the pad layout, and a dial click only changes dial page.",
         ]),
     ]),
 ]

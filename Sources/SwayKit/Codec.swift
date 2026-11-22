@@ -5,8 +5,15 @@
 //   preset   = name[20] | scale u8 | layout u8 | regionCount u8 | region[79] * count | pads[80] | encoders[128]
 // A .swayproj file is the same thing with every preset padded to 12 regions.
 //
-// Bytes whose meaning is not yet confirmed are carried through untouched in the
-// `_raw` fields, so decode -> encode is always byte-exact.
+// Region = 79 bytes, every one identified (names follow Audima's app):
+//   0 mode | 1-16 xMin yMin xMax yMax (f32) | 17-20 strike trigger threshold (f32, -1 = off)
+//   21-22 CC X hand 1, hand 2 | 23-24 CC Y hand 1, hand 2 | 25 sway CC | 26 pulse CC
+//   27-41 notes[15] | 42 root note | 43 root octave | 44 note count
+//   45-46 channel X hand 1, hand 2 | 47-48 channel Y hand 1, hand 2 | 49-63 note channels[15]
+//   64 chord inversion | 65 chord type | 66-68 colour start | 69-71 colour end
+//   72 polyphonic expression (MPE) | 73 LED start | 74 LED end | 75 clear modulation on release
+//   76 invert X | 77 retrigger motion | 78 press CC          (0xff = none for CCs and notes)
+// The original bytes are still kept in `_raw`, so decode -> encode is byte-exact.
 
 public enum SwayLayout {
     public static let presetCount = 36
@@ -29,6 +36,9 @@ public struct Region: Codable, Equatable {
     public var strikeThreshold: Float?   // nil = off
     public var ccX: Int?, ccX2: Int?     // X2 / Y2 are the second hand's CCs (used when Link Hands is off)
     public var ccY: Int?, ccY2: Int?
+    /// MIDI channels (0-15) for the X and Y controllers, first and second hand.
+    public var channelX: Int, channelX2: Int
+    public var channelY: Int, channelY2: Int
     public var swayCc: Int?
     public var pulseCc: Int?
     public var pressCc: Int?
@@ -45,12 +55,15 @@ public struct Region: Codable, Equatable {
     public var ledEnd: Int
     public var clearModulationOnRelease: Bool
     public var invertX: Bool
-    public var raw: [UInt8]?             // source of truth for bytes 45-48, 72, 77
+    public var polyphonicExpression: Bool   // MPE / Glide
+    public var retriggerMotion: Bool        // "retriggerMotion" in Audima's app; off in every factory preset
+    public var raw: [UInt8]?             // original bytes, kept so untouched regions re-encode identically
 
     enum CodingKeys: String, CodingKey {
         case mode, xMin, yMin, xMax, yMax, strikeThreshold, ccX, ccX2, ccY, ccY2, swayCc, pulseCc, pressCc
         case notes, rootNote, rootOctave, noteCount, noteChannels, chordInversion, chordType
         case colorStart, colorEnd, ledStart, ledEnd, clearModulationOnRelease, invertX
+        case channelX, channelX2, channelY, channelY2, polyphonicExpression, retriggerMotion
         case raw = "_raw"
     }
 
@@ -74,6 +87,9 @@ public struct Region: Codable, Equatable {
         swayCc = cc(25); pulseCc = cc(26); pressCc = cc(78)
         notes = b[27..<42].filter { $0 != none }.map(Int.init)
         rootNote = Int(b[42]); rootOctave = Int(b[43]); noteCount = Int(b[44])
+        channelX = Int(b[45]); channelX2 = Int(b[46]); channelY = Int(b[47]); channelY2 = Int(b[48])
+        polyphonicExpression = b[72] == 1
+        retriggerMotion = b[77] == 1
         noteChannels = b[49..<64].prefix(min(Int(b[44]), 15)).map(Int.init)
         chordInversion = Int(b[64]); chordType = Int(b[65])
         colorStart = hexColor(b[66..<69]); colorEnd = hexColor(b[69..<72])
@@ -95,6 +111,10 @@ public struct Region: Codable, Equatable {
         for i in 27..<42 { b[i] = none }
         for (i, n) in notes.prefix(15).enumerated() { b[27 + i] = UInt8(clamping: n) }
         b[42] = UInt8(clamping: rootNote); b[43] = UInt8(clamping: rootOctave); b[44] = UInt8(clamping: noteCount)
+        b[45] = UInt8(clamping: channelX); b[46] = UInt8(clamping: channelX2)
+        b[47] = UInt8(clamping: channelY); b[48] = UInt8(clamping: channelY2)
+        b[72] = polyphonicExpression ? 1 : 0
+        b[77] = retriggerMotion ? 1 : 0
         for i in 49..<64 { b[i] = none }
         for (i, c) in noteChannels.prefix(15).enumerated() { b[49 + i] = UInt8(clamping: c) }
         b[64] = UInt8(clamping: chordInversion); b[65] = UInt8(clamping: chordType)

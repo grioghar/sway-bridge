@@ -52,6 +52,27 @@ final class CodecTests: XCTestCase {
         XCTAssertEqual(again.name, "Renamed")
     }
 
+    func testChannelsAndFlagsDecodeAndRoundTrip() throws {
+        var project = try Project(bytes: try capture("project-device.bin"))
+        let glide = project.presets[34]                      // bank 6, preset 5
+        XCTAssertEqual(glide.name, "GLIDE")
+        XCTAssertTrue(glide.regions.allSatisfy { $0.polyphonicExpression })
+        XCTAssertFalse(project.presets[1].regions[0].polyphonicExpression)
+        XCTAssertEqual(project.presets[1].regions[0].channelX, 0)
+        project.presets[1].regions[0].channelX = 4
+        project.presets[1].regions[0].channelY2 = 9
+        project.presets[1].regions[0].polyphonicExpression = true
+        project.presets[1].regions[0].retriggerMotion = true
+        let bytes = project.presets[1].encoded()
+        XCTAssertEqual(Array(bytes[(23 + 45)..<(23 + 49)]), [4, 0, 0, 9])
+        XCTAssertEqual(bytes[23 + 72], 1)
+        XCTAssertEqual(bytes[23 + 77], 1)
+        let again = try Preset(bytes: bytes).regions[0]
+        XCTAssertEqual(again.channelX, 4)
+        XCTAssertEqual(again.channelY2, 9)
+        XCTAssertTrue(again.polyphonicExpression && again.retriggerMotion)
+    }
+
     func testTruncatedDataThrowsInsteadOfCrashing() throws {
         let raw = try capture("project-device.bin")
         XCTAssertThrowsError(try Project(bytes: Array(raw.prefix(500))))

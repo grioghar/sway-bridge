@@ -136,6 +136,9 @@ final class AppModel: ObservableObject {
             // The preset stores the X and Y CCs twice; keep the second copy in step when one is edited.
             if new.ccX != d.regions[index].ccX { new.ccX2 = new.ccX }
             if new.ccY != d.regions[index].ccY { new.ccY2 = new.ccY }
+            // Same for the channels: the second hand follows the first (hands linked).
+            if new.channelX != d.regions[index].channelX { new.channelX2 = new.channelX }
+            if new.channelY != d.regions[index].channelY { new.channelY2 = new.channelY }
             self.draft?.regions[index] = new
         })
     }

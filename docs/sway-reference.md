@@ -307,7 +307,7 @@ Question: which preset bytes hold the black-button and dial-press settings? Answ
   - Pads in the built-in pink layout: notes on channel 1 in the range 0-15, velocity 90. In the custom green layout: the preset's `rootOctave * 12 + rootNote` on the pad's channel.
 - **So "dial press settings" are the encoder channel table**: `channels[page][dial]` is the channel used after dial `page + 1` is clicked. Factory value: page N sends on channel N for every dial, with the same CCs 20-27 on every page.
 - The manual's "pressing a knob sends a second, independent CC" and "mappable buttons send CC, configurable per preset" do not match firmware 1.3.0 or app 1.2.0 as measured here.
-- Still unknown: region bytes 45-48, 72 and 77.
+- Region bytes 45-48, 72 and 77 are decoded in section 13.
 
 ### Button test on the hardware (2026-11-22, firmware 1.3.0, no DAW script running)
 Each black button pressed once in a known order, with the Sway's MIDI recorded:
@@ -320,3 +320,18 @@ Each black button pressed once in a known order, with the Sway's MIDI recorded:
 - All on MIDI channel 2, velocity 90, note-off on release. The numbering runs across the top row then the bottom row, like the pads; note 6 is never sent.
 - **The right group's bottom-left button toggles the pads between pink (built-in) and green (custom) with a short press.** A long press does nothing. (Audima staff wrote "press and hold 3 s" on Discord; that is not how this unit behaves.)
 - Pads, same two pads pressed in each layout: green sent the preset's notes (66 and 67 for pads 5 and 6 of bank 6 preset 6); pink sent notes 4 and 5 on channel 1. So in the pink layout a pad sends its own index, 0-15, in the same order as the custom layout.
+
+## 13. The last region bytes (2026-11-22)
+
+Audima's app names every region setting ("struct RegionOptions with 30 elements"), in order: enabled, mode, xMin, yMin, xMax, yMax, strikeTriggerThreshold, modulationCcX, modulationCcY, swayCc, pulseCc, notes, rootNote, rootOctave, noteCount, **modulationChannelX, modulationChannelY**, noteChannels, chordInversion, chordType, colorStart, colorEnd, **polyphonicExpression**, ledStart, ledEnd, clearModulationOnRelease, invertX, **retriggerMotion**, pressCc. Laid over the 79 bytes of a region on the wire, the three names in bold fall exactly on the bytes that were unexplained:
+
+| Bytes | Meaning | Evidence |
+| --- | --- | --- |
+| 45, 46 | MIDI channel of the X controller, hand 1 and hand 2 (0-15) | Position between noteCount (44) and noteChannels (49), mirroring the CC pairs at 21-24. 0 in every factory region, i.e. channel 1, which is where those CCs were recorded. |
+| 47, 48 | MIDI channel of the Y controller, hand 1 and hand 2 | Same. |
+| 72 | Polyphonic expression (MPE / Glide), 0 or 1 | Sits between colorEnd (69-71) and ledStart (73). It is 1 in all 8 regions of bank 6 preset 5 "GLIDE" and 0 in the other 167 regions on the device. |
+| 77 | Retrigger motion, 0 or 1 | Sits between invertX (76) and pressCc (78). 0 in all 175 factory regions; what it changes in the Sway's behaviour has not been tested. |
+
+- The CC pairs at 21-22 and 23-24 are hand 1 and hand 2. In every factory preset on this unit the two are equal, which is what the app's linked hands produce.
+- Confidence: the MPE byte is confirmed by data. The channel bytes are identified by field order and a consistent default, but no preset on this unit uses a non-default value, so they have not been seen changing the wire. "Press as aftertouch" in the manual corresponds to the `afterTouch` alias of `pressCc`; how aftertouch is selected is not known.
+- Still open: only the behaviour of retrigger motion, and a wire check of the channel bytes (write a region with X on channel 5 and watch the CC arrive there).
