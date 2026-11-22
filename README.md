@@ -73,7 +73,7 @@ Add a Browser source pointing at one of:
 the Ableton User Library. Restart Live, choose **Sway** under Settings → Link, Tempo & MIDI →
 Control Surface, and drop **Sway Map** on the MIDI track that receives the Sway.
 
-To map a control with Sway Map: click **Learn** on a row and move the control on the Sway, press
+Sway Map shows four mapping rows at a time; the tabs 1-4 reach all sixteen. To map a control: click **Learn** on a row and move the control on the Sway, press
 **Map**, then click the parameter in Live. With the control surface active, dial page 1 is taken
 by the selected device and never reaches Sway Map; learn dials from pages 6-8, or use hands.
 A region that sends two controllers at once (a trigger and a height, say) is learned by whichever

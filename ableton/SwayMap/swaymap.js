@@ -7,6 +7,7 @@
 //   learn_N         live.text toggle
 //   min_N / max_N   live.numbox (percent)
 //   remote_N        live.remote~ that drives the target
+//   num_N           row number; all of a row is shown or hidden by page()
 //   mapstate        pattr blob that Live saves with the set
 
 autowatch = 1;
@@ -36,12 +37,23 @@ function refresh(i) {
 
 function status(text) { say("status", text); }
 
+// ---- pages: PER_PAGE rows are shown at a time so the text can be large ----
+var PER_PAGE = 4;
+var PARTS = ["num_", "learn_", "src_", "map_", "dst_", "min_", "max_", "clear_"];
+
+function page(p) {
+    for (var i = 0; i < SLOTS; i++) {
+        var off = Math.floor(i / PER_PAGE) !== p;
+        for (var k = 0; k < PARTS.length; k++) { var o = named(PARTS[k] + i); if (o) o.hidden = off; }
+    }
+}
+
 function init() {
     try {
         ready = true;
         for (var i = 0; i < SLOTS; i++) refresh(i);
         if (pendingRestore) { applyRestore(pendingRestore); pendingRestore = null; }
-        status("Ready — Learn a control, press Map, then click a Live parameter");
+        status("Ready. Learn → Map → click a parameter");
     } catch (e) { status("init failed: " + e); }
 }
 
@@ -92,7 +104,7 @@ function map(i) {
     if (!poller) poller = new Task(pick, this);
     poller.interval = 100;
     poller.repeat();
-    status("Slot " + (i + 1) + ": now click a parameter in Live…");
+    status("Slot " + (i + 1) + ": click a parameter in Live…");
 }
 
 function stopPicking() {
@@ -105,7 +117,7 @@ function pick() {
     if (mapping < 0) { stopPicking(); return; }
     polls++;
     if (polls < 3) return;            // let the Map press itself settle
-    if (polls > 300) { stopPicking(); status("Map timed out — press Map, then click a parameter"); return; }
+    if (polls > 300) { stopPicking(); status("Map timed out. Press Map again."); return; }
     try {
         var sel = new LiveAPI("live_set view selected_parameter");
         if (!sel || sel.id == 0) return;

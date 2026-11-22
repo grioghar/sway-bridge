@@ -10,7 +10,9 @@ web view shows the bridge's live overlay.
 import json, os, struct
 
 SLOTS = 16
-ROW_H, TOP = 18, 22
+PER_PAGE = 4                     # mapping rows shown at once; the rest are on further pages
+ROW_H, TOP = 34, 26
+FS = 14.0                        # text size of the mapping rows
 WEB_W = 370                      # overlay is 1280x520 -> 370x150, leaving a status row beneath
 COL_W = 330
 boxes, lines = [], []
@@ -81,45 +83,51 @@ openbtn = box("live.text", [450, 120, 90, 18], [2, 152, 80, 16], numoutlets=2, o
               saved_attribute_attributes=param("Open Configurator", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
 launch = box("message", [450, 145, 330, 22], None, text=";\rmax launchbrowser http://localhost:7729/config/",
              numinlets=2, numoutlets=1, outlettype=[""])
-box("live.comment", [560, 120, 200, 18], [86, 152, WEB_W - 88, 16], text="loading…", textjustification=0, varname="status")
+box("live.comment", [560, 120, 200, 18], [86, 150, WEB_W - 88, 18], text="loading…", textjustification=0, varname="status", fontsize=12.0)
 # A live.text in button mode sends a bang, not 1; accept either.
 sel1 = obj("route bang 1", [450, 100, 40, 22], numoutlets=3, outlettype=["", "", ""])
 wire(openbtn, sel1)
 wire(sel1, launch)
 wire(sel1, launch, 1)
 
-# ---- mapping slots ----
-def header(col):
-    x = WEB_W + 8 + col * COL_W
-    for text, dx, w in (("Source", 38, 60), ("Target", 132, 110), ("Min", 252, 30), ("Max", 284, 30)):
-        box("live.comment", [700, 20, w, 18], [x + dx, 3, w, 16], text=text, textjustification=0)
-
-header(0)
-header(1)
+# ---- mapping slots: one wide column, PER_PAGE rows at a time, large text ----
+X0 = WEB_W + 10
+for text, dx, w in (("Source", 80, 110), ("Target", 262, 200), ("Min", 512, 50), ("Max", 574, 50)):
+    box("live.comment", [700, 20, w, 18], [X0 + dx, 3, w, 18], text=text, textjustification=0, fontsize=12.0)
+PAGES = (SLOTS + PER_PAGE - 1) // PER_PAGE
+tabs = box("live.tab", [700, 0, 200, 18], [X0, 2, 72, 20], numoutlets=3, outlettype=["", "", "float"],
+           num_lines_patching=1, num_lines_presentation=1, parameter_enable=1, varname="page", fontsize=11.0,
+           saved_attribute_attributes=param("Page", 2, parameter_enum=[str(n + 1) for n in range(PAGES)],
+                                            parameter_invisible=2, parameter_unitstyle=0))
+pg = obj("prepend page", [910, 0, 90, 22]); wire(tabs, pg); wire(pg, js)
 for i in range(SLOTS):
-    col, row = divmod(i, 8)
-    x = WEB_W + 8 + col * COL_W
-    y = TOP + row * ROW_H
+    row = i % PER_PAGE
+    x, y = X0, TOP + row * ROW_H
     py = 60 + i * 30
-    learn = box("live.text", [700, py, 36, 16], [x, y, 36, 16], numoutlets=2, outlettype=["", ""], mode=1,
-                text="Learn", texton="…CC", parameter_enable=1, varname=f"learn_{i}",
+    hide = {"hidden": 0 if i < PER_PAGE else 1}
+    box("live.comment", [660, py, 30, 18], [x, y + 4, 26, 20], text=str(i + 1), textjustification=1, fontsize=FS, varname=f"num_{i}", **hide)
+    learn = box("live.text", [700, py, 36, 16], [x + 28, y, 50, 26], numoutlets=2, outlettype=["", ""], mode=1, fontsize=FS,
+                text="Learn", texton="…CC", parameter_enable=1, varname=f"learn_{i}", **hide,
                 saved_attribute_attributes=param(f"Learn {i + 1}", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
     p = obj(f"prepend learn {i}", [745, py, 95, 22]); wire(learn, p); wire(p, js)
-    box("live.comment", [850, py, 60, 18], [x + 38, y, 56, 16], text="—", textjustification=0, varname=f"src_{i}")
-    mapb = box("live.text", [915, py, 32, 16], [x + 96, y, 34, 16], numoutlets=2, outlettype=["", ""], mode=0,
-               text="Map", texton="Map", parameter_enable=1, varname=f"map_{i}",
+    box("live.comment", [850, py, 60, 18], [x + 80, y + 4, 112, 20], text="—", textjustification=0, fontsize=FS, varname=f"src_{i}", **hide)
+    mapb = box("live.text", [915, py, 32, 16], [x + 196, y, 60, 26], numoutlets=2, outlettype=["", ""], mode=0, fontsize=FS,
+               text="Map", texton="Map", parameter_enable=1, varname=f"map_{i}", **hide,
                saved_attribute_attributes=param(f"Map {i + 1}", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
     s = obj("route bang 1", [950, py, 40, 22], numoutlets=3, outlettype=["", "", ""]); wire(mapb, s)
     m = box("message", [995, py, 50, 22], None, text=f"map {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(s, m, 1); wire(m, js)
-    box("live.comment", [1050, py, 120, 18], [x + 132, y, 118, 16], text="—", textjustification=0, varname=f"dst_{i}")
-    for name, dx, initial in (("min", 252, 0), ("max", 284, 100)):
-        nb = box("live.numbox", [1175 + (40 if name == "max" else 0), py, 36, 15], [x + dx, y, 30, 15], numoutlets=2,
-                 outlettype=["", "float"], parameter_enable=1, varname=f"{name}_{i}",
+    box("live.comment", [1050, py, 120, 18], [x + 262, y + 4, 244, 20], text="—", textjustification=0, fontsize=FS, varname=f"dst_{i}", **hide)
+    for name, dx, initial in (("min", 510, 0), ("max", 572, 100)):
+        # parameter_invisible 1: saved with the set, but not offered to control surfaces or automation,
+        # so a controller steering "the selected device" cannot move these by accident.
+        nb = box("live.numbox", [1175 + (40 if name == "max" else 0), py, 36, 15], [x + dx, y + 2, 56, 22], numoutlets=2, fontsize=FS,
+                 outlettype=["", "float"], parameter_enable=1, varname=f"{name}_{i}", **hide,
                  saved_attribute_attributes=param(f"{name.title()} {i + 1}", 0, parameter_mmin=0.0, parameter_mmax=100.0,
-                                                  parameter_initial_enable=1, parameter_initial=[initial], parameter_unitstyle=5))
+                                                  parameter_initial_enable=1, parameter_initial=[initial], parameter_unitstyle=5,
+                                                  parameter_invisible=1))
         p = obj(f"prepend {name} {i}", [1260 + (100 if name == "max" else 0), py, 90, 22]); wire(nb, p); wire(p, js)
-    clr = box("live.text", [1460, py, 16, 16], [x + 316, y, 12, 16], numoutlets=2, outlettype=["", ""], mode=0,
-              text="×", texton="×", parameter_enable=1, varname=f"clear_{i}",
+    clr = box("live.text", [1460, py, 16, 16], [x + 634, y, 24, 26], numoutlets=2, outlettype=["", ""], mode=0, fontsize=FS,
+              text="×", texton="×", parameter_enable=1, varname=f"clear_{i}", **hide,
               saved_attribute_attributes=param(f"Clear {i + 1}", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
     s = obj("route bang 1", [1480, py, 40, 22], numoutlets=3, outlettype=["", "", ""]); wire(clr, s)
     m = box("message", [1525, py, 55, 22], None, text=f"clear {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(s, m, 1); wire(m, js)
