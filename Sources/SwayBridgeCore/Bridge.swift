@@ -165,7 +165,47 @@ public final class Bridge {
     private func pollSelection() {
         guard let selection = try? withClient({ try $0.selection() }), selection != state.selection else { return }
         state.selection = selection
+        repairIfFlattened(selection)
         publish()
+    }
+
+    /// The preset as firmware 1.3.0 leaves it after entering it: every region's chord type
+    /// replaced by the first region's. Nil when that would change nothing (preset not at risk).
+    private func flattened(_ preset: Preset) -> [UInt8]? {
+        let count = min(preset.regionCount, preset.regions.count)
+        guard count > 1 else { return nil }
+        var copy = preset
+        for i in 1..<count { copy.regions[i].chordType = copy.regions[0].chordType }
+        let bytes = copy.encoded()
+        return bytes == preset.encoded() ? nil : bytes
+    }
+
+    /// The same firmware flaw `activate` guards against also strikes when a preset is chosen with
+    /// the Sway's own buttons or by a Program Change from a DAW. When the Sway moves to a preset
+    /// that is at risk, read it back; if it shows exactly that damage and nothing else, upload the
+    /// original again. Any other difference is taken as a change made on the Sway and kept.
+    private func repairIfFlattened(_ selection: PresetSelection) {
+        let index = selection.bank * SwayLayout.presetsPerBank + selection.preset
+        guard let project = state.project, index < project.presets.count,
+              let damaged = flattened(project.presets[index]) else { return }
+        let original = project.presets[index].encoded()
+        _ = try? withClient { client in
+            var raw = try client.readProject()
+            var fresh = try Project(bytes: raw)
+            guard index < fresh.presets.count else { return }
+            // If the player has already moved on, leave it: an upload would pull the Sway back.
+            guard try client.selection() == selection else { return }
+            if fresh.presets[index].encoded() == damaged {
+                log("the Sway flattened the chord types of bank \(selection.bank + 1) preset \(selection.preset + 1) on entering it; restoring it")
+                backup(raw, name: "project-altered-on-entry")
+                try client.writePreset(bank: selection.bank, preset: selection.preset, bytes: original)
+                raw = try client.readProject()
+                fresh = try Project(bytes: raw)
+                state.selection = try client.selection()
+            }
+            state.project = fresh
+            backup(raw, name: "project")
+        }
     }
 
     private func backup(_ raw: [UInt8], name: String) {

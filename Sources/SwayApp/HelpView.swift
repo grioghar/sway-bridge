@@ -63,7 +63,7 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "From this app", points: [
             "Select a preset and click Switch Sway (⌘↩), or right-click a preset in the sidebar or the All Presets grid.",
             "Sway Bridge sends the Sway a MIDI Program Change and then asks it which preset is active, so an error here means the Sway really did not switch. This needs Sway firmware 1.3.0 or later.",
-            "Firmware 1.3.0 has a flaw here: when a preset is entered by Program Change, the Sway overwrites every region's chord type with the first region's. Sway Bridge checks for this after switching and puts the preset back as it was, so switching from this app is safe. The same thing happens when the preset is chosen with the Sway's own preset buttons or by a Program Change from Ableton or another DAW, and those are not protected. Sending the preset from here again repairs it.",
+            "Firmware 1.3.0 has a flaw: whenever a preset is entered other than by sending it from the computer (Program Change, or the Sway's own preset buttons), the Sway overwrites every region's chord type with the first region's. While Sway Bridge is running it checks each preset the Sway moves to and, if it finds exactly that damage, puts the preset back as it was; the Sway reloads the preset for a moment when this happens. With Sway Bridge closed nothing protects the preset; sending it again from here repairs it.",
         ]),
         HelpSection(heading: "From Ableton Live or another DAW", points: [
             "Send a Program Change to the Sway's MIDI port. Measured on firmware 1.3.0: values 0–35 select the presets in order, bank 1 preset 1 first (in software that counts from 1, use 1–36).",
