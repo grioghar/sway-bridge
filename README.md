@@ -27,8 +27,8 @@ from a retail unit on firmware 1.3.0; other firmware versions may differ.
 | Bridge on macOS | Working against real hardware: read, edit, write and verify presets |
 | Sway Bridge.app (macOS) | Reads the Sway, edits presets and switches the active preset; sending an edited preset from the app and its live hand levels not yet tried with the hardware |
 | Configurator, overlay | Working; overlay hand display checked with simulated input only |
-| Sway Map (Max for Live) | Loads and initialises in Live 12; mapping not yet exercised with the hardware |
-| Control surface script | Written against Live 12's bundled framework; not yet run |
+| Sway Map (Max for Live) | Working in Live 12 with the hardware: Learn, Map to a mixer control, and the mapping survives saving and reopening the set |
+| Control surface script | Loads in Live 12 and its first dial page steers the selected device; the mixer pages are not yet checked |
 | Bridge on Linux | Builds, tests pass and pages are served on Ubuntu 24.04 (Swift 6.4); serial and MIDI not yet tried with hardware |
 | Bridge on Windows | Code written; not yet built |
 
@@ -72,6 +72,12 @@ Add a Browser source pointing at one of:
 `scripts/install-ableton.sh` copies the control surface script and the Sway Map device into
 the Ableton User Library. Restart Live, choose **Sway** under Settings → Link, Tempo & MIDI →
 Control Surface, and drop **Sway Map** on the MIDI track that receives the Sway.
+
+To map a control with Sway Map: click **Learn** on a row and move the control on the Sway, press
+**Map**, then click the parameter in Live. With the control surface active, dial page 1 is taken
+by the selected device and never reaches Sway Map; learn dials from pages 6-8, or use hands.
+A region that sends two controllers at once (a trigger and a height, say) is learned by whichever
+arrives first, so hold the hand in place before clicking Learn to get the continuous one.
 
 Dial pages with the control surface active: page 1 controls the selected device, pages 2–5
 control volume, pan, send A and send B of tracks 1–8, pages 6–8 are left free.

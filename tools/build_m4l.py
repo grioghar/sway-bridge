@@ -82,9 +82,11 @@ openbtn = box("live.text", [450, 120, 90, 18], [2, 152, 80, 16], numoutlets=2, o
 launch = box("message", [450, 145, 330, 22], None, text=";\rmax launchbrowser http://localhost:7729/config/",
              numinlets=2, numoutlets=1, outlettype=[""])
 box("live.comment", [560, 120, 200, 18], [86, 152, WEB_W - 88, 16], text="loading…", textjustification=0, varname="status")
-sel1 = obj("sel 1", [450, 100, 40, 22], numoutlets=2, outlettype=["bang", ""])
+# A live.text in button mode sends a bang, not 1; accept either.
+sel1 = obj("route bang 1", [450, 100, 40, 22], numoutlets=3, outlettype=["", "", ""])
 wire(openbtn, sel1)
 wire(sel1, launch)
+wire(sel1, launch, 1)
 
 # ---- mapping slots ----
 def header(col):
@@ -107,8 +109,8 @@ for i in range(SLOTS):
     mapb = box("live.text", [915, py, 32, 16], [x + 96, y, 34, 16], numoutlets=2, outlettype=["", ""], mode=0,
                text="Map", texton="Map", parameter_enable=1, varname=f"map_{i}",
                saved_attribute_attributes=param(f"Map {i + 1}", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
-    s = obj("sel 1", [950, py, 40, 22], numoutlets=2, outlettype=["bang", ""]); wire(mapb, s)
-    m = box("message", [995, py, 50, 22], None, text=f"map {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(m, js)
+    s = obj("route bang 1", [950, py, 40, 22], numoutlets=3, outlettype=["", "", ""]); wire(mapb, s)
+    m = box("message", [995, py, 50, 22], None, text=f"map {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(s, m, 1); wire(m, js)
     box("live.comment", [1050, py, 120, 18], [x + 132, y, 118, 16], text="—", textjustification=0, varname=f"dst_{i}")
     for name, dx, initial in (("min", 252, 0), ("max", 284, 100)):
         nb = box("live.numbox", [1175 + (40 if name == "max" else 0), py, 36, 15], [x + dx, y, 30, 15], numoutlets=2,
@@ -119,8 +121,8 @@ for i in range(SLOTS):
     clr = box("live.text", [1460, py, 16, 16], [x + 316, y, 12, 16], numoutlets=2, outlettype=["", ""], mode=0,
               text="×", texton="×", parameter_enable=1, varname=f"clear_{i}",
               saved_attribute_attributes=param(f"Clear {i + 1}", 2, parameter_enum=["val1", "val2"], parameter_invisible=2))
-    s = obj("sel 1", [1480, py, 40, 22], numoutlets=2, outlettype=["bang", ""]); wire(clr, s)
-    m = box("message", [1525, py, 55, 22], None, text=f"clear {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(m, js)
+    s = obj("route bang 1", [1480, py, 40, 22], numoutlets=3, outlettype=["", "", ""]); wire(clr, s)
+    m = box("message", [1525, py, 55, 22], None, text=f"clear {i}", numinlets=2, numoutlets=1, outlettype=[""]); wire(s, m); wire(s, m, 1); wire(m, js)
     obj("live.remote~", [1590, py, 80, 22], numinlets=2, numoutlets=1, outlettype=[""], varname=f"remote_{i}")
 
 patcher = {"patcher": {

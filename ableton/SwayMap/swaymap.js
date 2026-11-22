@@ -41,7 +41,7 @@ function init() {
         ready = true;
         for (var i = 0; i < SLOTS; i++) refresh(i);
         if (pendingRestore) { applyRestore(pendingRestore); pendingRestore = null; }
-        status("Ready — Learn a control, click a Live parameter, then Map");
+        status("Ready — Learn a control, press Map, then click a Live parameter");
     } catch (e) { status("init failed: " + e); }
 }
 
@@ -78,16 +78,43 @@ function learn(i, on) {
     status(on ? "Move a control on the Sway…" : "Learn cancelled");
 }
 
-/** Map slot i to the parameter currently selected in Live (the last one clicked). */
+/** Map slot i: press Map, then click the parameter in Live. The next parameter that becomes
+ *  selected is taken. (Reading the selection at the moment of the press does not work: pressing
+ *  a button in this device clears Live's selected parameter.) Press Map again to cancel. */
+var mapping = -1;
+var poller = null;
+var polls = 0;
+
 function map(i) {
-    if (!ready) { status("Live is not ready yet"); return; }
+    if (mapping === i) { stopPicking(); status("Map cancelled"); return; }
+    mapping = i;
+    polls = 0;
+    if (!poller) poller = new Task(pick, this);
+    poller.interval = 100;
+    poller.repeat();
+    status("Slot " + (i + 1) + ": now click a parameter in Live…");
+}
+
+function stopPicking() {
+    mapping = -1;
+    if (poller) poller.cancel();
+}
+
+/** Runs ten times a second while a slot is waiting for its parameter (gives up after 30 s). */
+function pick() {
+    if (mapping < 0) { stopPicking(); return; }
+    polls++;
+    if (polls < 3) return;            // let the Map press itself settle
+    if (polls > 300) { stopPicking(); status("Map timed out — press Map, then click a parameter"); return; }
     try {
         var sel = new LiveAPI("live_set view selected_parameter");
-        if (!sel || sel.id == 0) { status("Click a parameter in Live first, then Map"); return; }
+        if (!sel || sel.id == 0) return;
+        var i = mapping;
+        stopPicking();
         attach(i, sel);
         persist();
         status("Slot " + (i + 1) + " → " + slots[i].name);
-    } catch (e) { status("map failed: " + e); }
+    } catch (e) { stopPicking(); status("map failed: " + e); }
 }
 
 function attach(i, api) {
@@ -96,9 +123,12 @@ function attach(i, api) {
     s.path = api.unquotedpath;
     s.pmin = parseFloat(api.get("min"));
     s.pmax = parseFloat(api.get("max"));
-    var owner = new LiveAPI(api.unquotedpath.replace(/ parameters \d+$/, ""));
+    // Name it after its device, or after its track when it is a mixer control (volume, pan, send).
+    var ownerPath = /mixer_device/.test(s.path) ? s.path.replace(/ mixer_device.*$/, "") : s.path.replace(/ parameters \d+$/, "");
+    var owner = ownerPath !== s.path ? new LiveAPI(ownerPath) : null;
     var ownerName = owner && owner.id != 0 ? String(owner.get("name")) : "";
-    s.name = (ownerName ? ownerName + " · " : "") + String(api.get("name"));
+    var own = String(api.get("name")).replace(/^Track /, "");
+    s.name = (ownerName ? ownerName + " · " : "") + own;
     var r = named("remote_" + i);
     if (r) r.message("id", s.id);
     refresh(i);
