@@ -211,7 +211,7 @@ struct ControlInspector: View {
         switch model.selected {
         case .region:
             if let region = model.regionBinding {
-                Inspector(region: region, index: model.region, count: draft.regionCount).frame(maxWidth: 420)
+                Inspector(region: region, index: model.region, count: draft.regionCount)
             } else {
                 Text("This preset has no regions.").foregroundStyle(.secondary)
             }

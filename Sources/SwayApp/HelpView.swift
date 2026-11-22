@@ -23,7 +23,8 @@ private let helpTopics: [HelpTopic] = [
             "The dot at the top of the window turns green and shows the firmware version when Sway Bridge has found the Sway. The first read of all 36 presets takes a few seconds.",
         ]),
         HelpSection(heading: "The window", points: [
-            "Left: the six banks, six presets each. The green dot marks the preset that is active on the Sway.",
+            "Left: one bank of six presets at a time; the 1–6 strip picks the bank. The green dot marks the preset that is active on the Sway.",
+            "The grid button (also All Presets in the toolbar) shows all 36 presets at once; click one to edit it.",
             "Centre: a drawing of the Sway. The coloured boxes above it are the sensing regions of the preset, as seen from above.",
             "Below: the settings for whatever you clicked on the drawing.",
         ]),
@@ -58,7 +59,7 @@ private let helpTopics: [HelpTopic] = [
     ]),
     HelpTopic(id: "switch", title: "Switching Presets", symbol: "arrow.left.arrow.right", sections: [
         HelpSection(heading: "From this app", points: [
-            "Select a preset and click Switch Sway to This Preset (⌘↩), or right-click a preset in the sidebar.",
+            "Select a preset and click Switch Sway (⌘↩), or right-click a preset in the sidebar or the All Presets grid.",
             "Sway Bridge sends the Sway a MIDI Program Change and then asks it which preset is active, so an error here means the Sway really did not switch. This needs Sway firmware 1.3.0 or later.",
         ]),
         HelpSection(heading: "From Ableton Live or another DAW", points: [

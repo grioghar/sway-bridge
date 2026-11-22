@@ -11,9 +11,10 @@ struct SwayBridgeApp: App {
         Window("Sway Bridge", id: "main") {
             ContentView()
                 .environmentObject(model)
-                .frame(minWidth: 980, minHeight: 640)
+                .frame(minWidth: Metrics.sidebar + Metrics.detailWidth, minHeight: Metrics.detailHeight)
         }
-        .defaultSize(width: 1240, height: 860)
+        .windowResizability(.contentMinSize)   // never smaller than the layout needs
+        .defaultSize(width: Metrics.sidebar + Metrics.detailWidth, height: Metrics.detailHeight)
         .commands {
             CommandGroup(replacing: .saveItem) {
                 Button("Send to Sway") { model.send() }

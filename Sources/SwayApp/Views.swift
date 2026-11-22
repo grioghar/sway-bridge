@@ -5,27 +5,36 @@ import SwayKit
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
+    @AppStorage("showAllPresets") private var showAll = false
 
     var body: some View {
-        NavigationSplitView {
-            PresetList()
-                .navigationSplitViewColumnWidth(min: 190, ideal: 220, max: 300)
-        } detail: {
+        // A plain row rather than a split view: the preset column must never collapse or overlap.
+        HStack(spacing: 0) {
+            PresetList(showAll: $showAll)
+                .frame(width: Metrics.sidebar)
+                .frame(maxHeight: .infinity)
+                .background(.regularMaterial)
+            Divider()
             VStack(spacing: 0) {
-                StatusBar()
+                StatusBar().frame(minHeight: Metrics.statusBar)
                 Divider()
-                if let draft = model.draftBinding {
+                if showAll, model.state.project != nil {
+                    PresetOverview(showAll: $showAll)
+                } else if let draft = model.draftBinding {
                     Editor(draft: draft)
                 } else {
                     Placeholder()
                 }
             }
+            .frame(minWidth: Metrics.detailWidth, minHeight: Metrics.detailHeight)
         }
         .toolbar {
             ToolbarItemGroup {
                 if model.busy { ProgressView().controlSize(.small) }
                 if model.isDirty { Text("Unsent changes").foregroundStyle(.orange).font(.callout) }
-                Button("Switch Sway to This Preset") { model.activate() }
+                Toggle(isOn: $showAll) { Label("All Presets", systemImage: "square.grid.3x3") }
+                    .help("Show all 36 presets at once")
+                Button("Switch Sway") { model.activate() }
                     .disabled(!model.state.connected || model.busy || model.open == nil || model.open == model.selection)
                     .help("Make the preset shown here the active one on the Sway")
                 Button("Reload") { model.reload() }
@@ -97,41 +106,127 @@ struct StatusBar: View {
                 Label(message, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 8)
+        .padding(.horizontal, Metrics.pad).padding(.vertical, 6)
     }
 }
 
 // MARK: - sidebar
 
+/// Compact preset picker: one bank at a time, chosen with the 1-6 strip, like the six buttons
+/// on the Sway. The grid button opens the overview of all 36.
 struct PresetList: View {
     @EnvironmentObject var model: AppModel
+    @Binding var showAll: Bool
+    @State private var bank = 0
 
     var body: some View {
-        List(selection: Binding(get: { model.open }, set: { if let slot = $0 { model.choose(slot) } })) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text("Bank").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button { showAll.toggle() } label: { Image(systemName: "square.grid.3x3") }
+                    .buttonStyle(.borderless)
+                    .help("Show all 36 presets at once")
+            }
+            Picker("Bank", selection: $bank) {
+                ForEach(0..<6, id: \.self) { Text("\($0 + 1)").tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden()
+
             if model.state.project != nil {
-                ForEach(0..<6, id: \.self) { bank in
-                    Section("Bank \(bank + 1)") {
-                        // Rows are identified by slot: ids must be unique across the whole list.
-                        ForEach((0..<SwayLayout.presetsPerBank).map { Slot(bank: bank, preset: $0) }, id: \.self) { slot in
-                            HStack {
-                                Text("\(slot.preset + 1)").monospacedDigit().foregroundStyle(.secondary)
-                                Text(model.presetName(slot)).lineLimit(1)
-                                Spacer()
-                                if model.selection == slot {
-                                    Circle().fill(.green).frame(width: 8, height: 8).help("Active on the Sway")
-                                }
-                            }
-                            .tag(slot)
-                            .contextMenu {
-                                Button("Switch Sway to This Preset") { model.activate(slot) }
-                                    .disabled(!model.state.connected || model.selection == slot)
-                            }
-                        }
+                VStack(spacing: 2) {
+                    ForEach((0..<SwayLayout.presetsPerBank).map { Slot(bank: bank, preset: $0) }, id: \.self) { slot in
+                        PresetRow(slot: slot, isOpen: model.open == slot && !showAll)
                     }
                 }
             }
+            if let live = model.selection, live.bank != bank {
+                Button("Active: bank \(live.bank + 1), preset \(live.preset + 1)") { bank = live.bank }
+                    .buttonStyle(.link).font(.caption)
+                    .help("Show the bank that is active on the Sway")
+            }
+            Spacer(minLength: 0)
         }
-        .listStyle(.sidebar)
+        .padding(10)
+        .onAppear { bank = model.open?.bank ?? 0 }
+        .onChange(of: model.open) { slot in if let slot { bank = slot.bank } }
+    }
+}
+
+struct PresetRow: View {
+    @EnvironmentObject var model: AppModel
+    let slot: Slot
+    let isOpen: Bool
+
+    var body: some View {
+        Button { model.choose(slot) } label: {
+            HStack(spacing: 6) {
+                Text("\(slot.preset + 1)").monospacedDigit().foregroundStyle(isOpen ? Color.white.opacity(0.8) : Color.secondary)
+                Text(model.presetName(slot)).lineLimit(1).truncationMode(.tail)
+                Spacer(minLength: 0)
+                if model.selection == slot { Circle().fill(.green).frame(width: 7, height: 7).help("Active on the Sway") }
+            }
+            .padding(.horizontal, 7).padding(.vertical, 4)
+            .foregroundStyle(isOpen ? Color.white : Color.primary)
+            .background(RoundedRectangle(cornerRadius: 5).fill(isOpen ? Color.accentColor : Color.clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Switch Sway to This Preset") { model.activate(slot) }
+                .disabled(!model.state.connected || model.selection == slot)
+        }
+    }
+}
+
+/// Every preset at once: banks across, presets down. Click one to edit it.
+struct PresetOverview: View {
+    @EnvironmentObject var model: AppModel
+    @Binding var showAll: Bool
+
+    var body: some View {
+        ScrollView {
+            Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+                GridRow {
+                    Text("")
+                    ForEach(0..<6, id: \.self) { Text("Bank \($0 + 1)").font(.headline) }
+                }
+                ForEach(0..<SwayLayout.presetsPerBank, id: \.self) { preset in
+                    GridRow {
+                        Text("\(preset + 1)").font(.headline).foregroundStyle(.secondary)
+                        ForEach((0..<6).map { Slot(bank: $0, preset: preset) }, id: \.self) { slot in cell(slot) }
+                    }
+                }
+            }
+            .padding(16)
+            Text("Click a preset to edit it. Right-click to switch the Sway to it. The green dot is the preset active on the Sway.")
+                .font(.callout).foregroundStyle(.secondary).padding(.bottom, 16)
+        }
+    }
+
+    private func cell(_ slot: Slot) -> some View {
+        let isOpen = model.open == slot, isLive = model.selection == slot
+        return Button {
+            model.choose(slot)
+            if model.pendingSlot == nil { showAll = false }
+        } label: {
+            HStack(alignment: .top, spacing: 4) {
+                Text(model.presetName(slot)).font(.body).multilineTextAlignment(.leading).lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                if isLive { Circle().fill(.green).frame(width: 8, height: 8).padding(.top, 4) }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+            .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(isOpen ? 0.14 : 0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(isOpen ? Color.accentColor : Color.clear, lineWidth: 2))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Switch Sway to This Preset") { model.activate(slot) }
+                .disabled(!model.state.connected || isLive)
+        }
     }
 }
 
@@ -143,35 +238,53 @@ struct Editor: View {
     @State private var dialPage = 0
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack {
-                    TextField("Preset name", text: Binding(get: { draft.name }, set: { model.setName($0) }))
-                        .textFieldStyle(.roundedBorder).font(.title3).frame(maxWidth: 320)
-                    Picker("Scale", selection: $draft.scale) {
-                        ForEach(SwayLayout.scales.indices, id: \.self) { Text(SwayLayout.scales[$0]).tag($0) }
-                        if !SwayLayout.scales.indices.contains(draft.scale) { Text("Scale \(draft.scale)").tag(draft.scale) }
-                    }
-                    .frame(maxWidth: 220)
-                    Picker("Dial page", selection: $dialPage) {
-                        ForEach(0..<8, id: \.self) { Text(pageName($0)).tag($0) }
-                    }
-                    .pickerStyle(.segmented).frame(maxWidth: 330)
-                    Spacer()
-                    if let open = model.open, model.selection != open {
-                        Text("Not the active preset: live levels are off").foregroundStyle(.secondary)
-                    }
+        // Everything is on screen at once: the drawing takes whatever room is left, and the window
+        // cannot be made smaller than this layout needs (see Metrics).
+        VStack(alignment: .leading, spacing: Metrics.gap) {
+            HStack(spacing: 10) {
+                TextField("Preset name", text: Binding(get: { draft.name }, set: { model.setName($0) }))
+                    .textFieldStyle(.roundedBorder).frame(width: 190)
+                Picker("Scale", selection: $draft.scale) {
+                    ForEach(SwayLayout.scales.indices, id: \.self) { Text(SwayLayout.scales[$0]).tag($0) }
+                    if !SwayLayout.scales.indices.contains(draft.scale) { Text("Scale \(draft.scale)").tag(draft.scale) }
                 }
-                DeviceView(preset: draft, open: model.open, active: model.selection, selected: $model.selected,
-                           dialPage: $dialPage, feed: model.feed) { preset in
-                    if let bank = model.open?.bank { model.choose(Slot(bank: bank, preset: preset)) }
+                .frame(width: 170)
+                Picker("Dial page", selection: $dialPage) {
+                    ForEach(0..<8, id: \.self) { Text(pageName($0)).tag($0) }
                 }
-                ControlInspector(draft: $draft, dialPage: $dialPage)
-                    .id("\(model.open?.index ?? -1)-\(model.selected)")
+                .pickerStyle(.segmented).frame(width: 290)
+                Spacer(minLength: 0)
+                if let open = model.open, model.selection != open {
+                    Label("Live off", systemImage: "eye.slash").foregroundStyle(.secondary)
+                        .help("This is not the preset active on the Sway, so live levels are not shown")
+                }
             }
-            .padding(16)
+            .frame(height: Metrics.header)
+            DeviceView(preset: draft, open: model.open, active: model.selection, selected: $model.selected,
+                       dialPage: $dialPage, feed: model.feed) { preset in
+                if let bank = model.open?.bank { model.choose(Slot(bank: bank, preset: preset)) }
+            }
+            .frame(minWidth: Metrics.deviceWidth, maxWidth: .infinity, minHeight: Metrics.deviceHeight, maxHeight: .infinity)
+            ControlInspector(draft: $draft, dialPage: $dialPage)
+                .id("\(model.open?.index ?? -1)-\(model.selected)")
+                .frame(maxWidth: .infinity, minHeight: Metrics.inspector, maxHeight: Metrics.inspector, alignment: .topLeading)
         }
+        .padding(Metrics.pad)
     }
+}
+
+/// Sizes the minimum window is derived from, so nothing is ever cut off.
+enum Metrics {
+    static let pad: CGFloat = 14
+    static let gap: CGFloat = 10
+    static let header: CGFloat = 26
+    static let deviceWidth: CGFloat = 780
+    static let deviceHeight: CGFloat = deviceWidth * 520 / 1280
+    static let inspector: CGFloat = 186
+    static let statusBar: CGFloat = 38
+    static let sidebar: CGFloat = 160
+    static var detailWidth: CGFloat { deviceWidth + 2 * pad + 1 }
+    static var detailHeight: CGFloat { statusBar + 1 + 2 * pad + header + deviceHeight + inspector + 2 * gap }
 }
 
 struct RegionBox: View {
@@ -229,63 +342,69 @@ struct Inspector: View {
 
     var body: some View {
         GroupBox("Region \(index + 1) of \(count)") {
-            Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 7) {
-                row("Mode") {
-                    Picker("", selection: $region.mode) {
-                        ForEach(SwayLayout.modes.indices, id: \.self) { Text(SwayLayout.modes[$0]).tag($0) }
+            HStack(alignment: .top, spacing: 22) {
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                    row("Mode") {
+                        Picker("", selection: $region.mode) {
+                            ForEach(SwayLayout.modes.indices, id: \.self) { Text(SwayLayout.modes[$0]).tag($0) }
+                        }
+                        .labelsHidden().pickerStyle(.segmented).frame(width: 240)
                     }
-                    .labelsHidden().pickerStyle(.segmented)
-                }
-                if region.mode == 1 {
-                    row("Notes") {
-                        VStack(alignment: .leading, spacing: 2) {
+                    if region.mode == 1 {
+                        row("Notes") {
                             TextField("e.g. C3 E3 G3", text: $notesText)
-                                .textFieldStyle(.roundedBorder)
+                                .textFieldStyle(.roundedBorder).frame(width: 240)
                                 .onSubmit(commitNotes)
-                            if let notesError { Text(notesError).font(.caption).foregroundStyle(.red) }
+                                .help(notesError ?? "Note names such as C3 or F#4, or numbers 0–127; press Return")
+                                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.red, lineWidth: notesError == nil ? 0 : 1.5))
+                        }
+                        row("Note channel") {
+                            NumberField(value: Binding(get: { (region.noteChannels.first ?? 0) + 1 },
+                                                       set: { v in region.noteChannels = region.notes.map { _ in (v ?? 1) - 1 } }), range: 1...16)
                         }
                     }
-                    row("Note channel") {
-                        NumberField(value: Binding(get: { (region.noteChannels.first ?? 0) + 1 },
-                                                   set: { v in region.noteChannels = region.notes.map { _ in (v ?? 1) - 1 } }), range: 1...16)
+                    row("Strike threshold") {
+                        TextField("off", value: Binding(get: { region.strikeThreshold.map(Double.init) },
+                                                        set: { region.strikeThreshold = $0.map { Float(min(1, max(0, $0))) } }),
+                                  format: .number.precision(.fractionLength(0...2)))
+                            .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 58)
+                    }
+                    row("Colours") {
+                        HStack {
+                            colour($region.colorStart)
+                            Image(systemName: "arrow.right").foregroundStyle(.secondary)
+                            colour($region.colorEnd)
+                        }
                     }
                 }
-                row(region.mode == 2 ? "Trigger CC" : "X CC") { NumberField(value: $region.ccX, optional: true) }
-                row("Y CC") { NumberField(value: $region.ccY, optional: true) }
-                row("Sway CC") { NumberField(value: $region.swayCc, optional: true) }
-                row("Pulse CC") { NumberField(value: $region.pulseCc, optional: true) }
-                row("Press CC") { NumberField(value: $region.pressCc, optional: true) }
-                row("Strike threshold") {
-                    TextField("off", value: Binding(get: { region.strikeThreshold.map(Double.init) },
-                                                    set: { region.strikeThreshold = $0.map { Float(min(1, max(0, $0))) } }),
-                              format: .number.precision(.fractionLength(0...2)))
-                        .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 64)
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                    row(region.mode == 2 ? "Trigger CC" : "X CC") { NumberField(value: $region.ccX, optional: true) }
+                    row("Y CC") { NumberField(value: $region.ccY, optional: true) }
+                    row("Sway CC") { NumberField(value: $region.swayCc, optional: true) }
+                    row("Pulse CC") { NumberField(value: $region.pulseCc, optional: true) }
+                    row("Press CC") { NumberField(value: $region.pressCc, optional: true) }
                 }
-                row("Colours") {
-                    HStack {
-                        colour($region.colorStart)
-                        Image(systemName: "arrow.right").foregroundStyle(.secondary)
-                        colour($region.colorEnd)
+                Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 6) {
+                    row("LEDs") {
+                        HStack(spacing: 4) {
+                            NumberField(value: $region.ledStart.optional, range: 0...SwayLayout.ledCount)
+                            Text("to").foregroundStyle(.secondary)
+                            NumberField(value: $region.ledEnd.optional, range: 0...SwayLayout.ledCount)
+                        }
                     }
+                    row("Invert X") { Toggle("", isOn: $region.invertX).labelsHidden().help("Invert the horizontal axis and its LED animation") }
+                    row("Clear on release") { Toggle("", isOn: $region.clearModulationOnRelease).labelsHidden().help("Reset the CC to 0 when the hand leaves") }
                 }
-                row("LEDs") {
-                    HStack {
-                        NumberField(value: $region.ledStart.optional, range: 0...SwayLayout.ledCount)
-                        Text("to").foregroundStyle(.secondary)
-                        NumberField(value: $region.ledEnd.optional, range: 0...SwayLayout.ledCount)
-                    }
-                }
-                row("Invert horizontal axis") { Toggle("", isOn: $region.invertX).labelsHidden() }
-                row("Clear CC on release") { Toggle("", isOn: $region.clearModulationOnRelease).labelsHidden() }
+                Spacer(minLength: 0)
             }
-            .padding(6)
+            .padding(4)
         }
         .onAppear { notesText = region.notes.map(noteName).joined(separator: " ") }
     }
 
     private func row<Content: View>(_ label: String, @ViewBuilder _ content: () -> Content) -> some View {
         GridRow {
-            Text(label).foregroundStyle(.secondary).gridColumnAlignment(.trailing)
+            Text(label).foregroundStyle(.secondary).lineLimit(1).fixedSize().gridColumnAlignment(.trailing)
             content()
         }
     }
