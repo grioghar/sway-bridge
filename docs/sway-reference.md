@@ -129,7 +129,7 @@ Button-level front-panel operation, bank/preset selection keys, display button a
 
 ## 9. From the Audima Labs Discord (read 2026-11-22)
 
-Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
+Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway, #faq, #sway-tutorials, #ideas, #design-talk. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
 
 ### Hardware operation
 - **Power on/off:** press and hold the display encoder (staff, Sep 2025).
@@ -174,3 +174,15 @@ Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #fe
 - Power adapter for the middle port should be USB PD compliant; staff ask "below 35 W?" when diagnosing.
 - No Android/phone app; app is Mac and Windows only (staff, Nov 2025). MIDI in / thru were "being tested" in Sep 2024; the shipped unit has MIDI out only.
 - Requested, not available: sensor sensitivity control (adjacent regions flicker on a 4x3 grid), on-device key/scale selector, X/Y scaling factors, region naming (a show/hide region info toggle is done for the next app update, Jun 2026), sending Program Change, jog-wheel mode, arming several tracks at once.
+
+### More from #faq, #sway-tutorials, #ideas, #design-talk
+- **Banks: press and hold preset button 1-6 for about 2 seconds to switch to bank 1-6** (staff, 30 Jul 2026; moderator, Jul 2025). A short press selects that preset within the current bank. 6 banks x 6 presets = 36, all reachable from the hardware.
+- Some settings (e.g. channels) can be changed on the device itself through the display (moderator, Jul 2025); details not described.
+- **Written user manual:** linked from https://audima.com.au/tutorials/ (staff, 27 Jun 2026).
+- **Small black buttons:** have no fixed function by default and can be MIDI-mapped freely; with the Ableton script each gets a dedicated function (staff, Jul 2025; walkthrough video from about 2:20). They are not backlit.
+- Mapping tip for regions with two outputs: set one CC to "--" (off) while MIDI-learning the other, then swap (moderator, Jul 2025).
+- MPE is supported (staff, May 2026). Sway uses up to 16 MIDI channels (staff, Jun 2025).
+- Outputs: TRS MIDI out, USB-C data+power, USB-C 5 V power only.
+- No output range scaling (e.g. 0-64) on the device; scale in the DAW or with a MIDI translator (users, 2026). Rekordbox cannot map one CC to several functions; Serato can; users rely on Bome MIDI Translator and similar for Rekordbox/Traktor.
+- Pad LEDs cannot be driven over MIDI in; requested for DJ feedback (Jul-Sep 2026), staff "can look into" it.
+- A community member built a web companion tool that writes the official `.swayproj` file format with a shareable "device library" of CC charts (Dec 2025); Audima's developer said they would rather integrate device libraries into the official app.
