@@ -335,3 +335,9 @@ Audima's app names every region setting ("struct RegionOptions with 30 elements"
 - The CC pairs at 21-22 and 23-24 are hand 1 and hand 2. In every factory preset on this unit the two are equal, which is what the app's linked hands produce.
 - Confidence: the MPE byte is confirmed by data. The channel bytes are identified by field order and a consistent default, but no preset on this unit uses a non-default value, so they have not been seen changing the wire. "Press as aftertouch" in the manual corresponds to the `afterTouch` alias of `pressCc`; how aftertouch is selected is not known.
 - Still open: only the behaviour of retrigger motion, and a wire check of the channel bytes (write a region with X on channel 5 and watch the CC arrive there).
+
+### Wire tests of the region bytes (2026-11-22)
+- **Byte 45 confirmed as hand-1 X channel:** with it set to 4, the X controller (CC 50) arrived on MIDI channel 5 (1,696 messages, none on channel 1); with the original preset restored it went back to channel 1.
+- **The display knob edits the preset on the device, and the change is stored.** During a test the knob was pushed and turned; afterwards the preset read back from the Sway had the hand-1 Y CC changed from 38 to 36 while the hand-2 Y CC was still 38, and the Sway was sending CC 36. This also confirms bytes 23 and 24 as hand 1 and hand 2 of the Y CC.
+- While one output is selected on the display the Sway sends only that output: recordings showed only X (CC 50), then only Y (CC 36), never both.
+- Not yet confirmed on the wire: the Y channel bytes (47-48), the hand-2 bytes (46, 48, and CCs 22, 24) and retrigger motion (77).
