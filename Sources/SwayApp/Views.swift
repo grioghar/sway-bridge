@@ -70,6 +70,7 @@ struct Placeholder: View {
             Image(systemName: "cable.connector").font(.system(size: 40)).foregroundStyle(.secondary)
             Text(model.state.connected ? "Reading presets…" : "Connect the Sway over USB").font(.title3)
             Text("Quit Audima's own app first: both need the same serial port.").foregroundStyle(.secondary)
+            HelpMenuItem().buttonStyle(.link)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -30,9 +30,16 @@ struct SwayBridgeApp: App {
                     .disabled(!model.state.connected || model.busy)
             }
             CommandGroup(replacing: .help) {
+                HelpMenuItem()
+                Divider()
                 Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.solid) }
             }
         }
+
+        Window("Sway Bridge Help", id: "help") {
+            HelpView()
+        }
+        .defaultSize(width: 880, height: 620)
 
         MenuBarExtra("Sway Bridge", systemImage: model.state.connected ? "dot.radiowaves.left.and.right" : "bolt.horizontal.circle") {
             MenuBarContent().environmentObject(model)
@@ -51,6 +58,15 @@ enum Overlay {
 
     static func open(_ url: String) {
         if let url = URL(string: url) { NSWorkspace.shared.open(url) }
+    }
+}
+
+struct HelpMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Sway Bridge Help") { openWindow(id: "help") }
+            .keyboardShortcut("?")
     }
 }
 
@@ -73,6 +89,10 @@ struct MenuBarContent: View {
         Button("Copy OBS Overlay URL (Outline Style)") { Overlay.copy(Overlay.outline) }
         Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.solid) }
         Divider()
+        Button("Sway Bridge Help") {
+            openWindow(id: "help")
+            NSApp.activate(ignoringOtherApps: true)
+        }
         Button("Quit Sway Bridge") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
