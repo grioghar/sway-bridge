@@ -127,12 +127,40 @@ Key sources:
 Button-level front-panel operation, bank/preset selection keys, display button and encoder functions, dial pages, low-power, brightness, calibration, factory reset, Modulation/Notes/Trigger modes, Strike threshold, X/Y definitions, invert, clear-on-release, LED colour behaviour, scale and chord-type lists, inversion, root/octave, per-pad MIDI channel, CC defaults, Max for Live, MPE, MIDI implementation chart, detection range, power consumption, firmware changelog, firmware procedure (PDF unread), user manual, forums.
 
 
-## 9. From the Audima Labs Discord (#sway channel, read 2026-11-22)
+## 9. From the Audima Labs Discord (read 2026-11-22)
 
-Statements by Audima staff ("Isaac | Audima Labs") unless noted; only the most recent few months of one channel were read.
+Read in full: #sway, #updates, #software, #technical-support. Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
 
-- **Dial CC and channel** are editable in the Sway app: "click the knob icon which is above the layout/regions" (3 Oct 2026). This opens an "Encoder and Pad Mapping" panel.
-- **Custom mapping must be switched on at the hardware:** after pushing the project to the device, "click this button on Sway to switch to the custom Encoder and Pad Mapping ... (the pads will turn green)" (4 Oct 2026). The button marked in the screenshot is one of the four small buttons on the right-hand side (bottom row, column nearer the pads). [Reading of a small screenshot: confirm on the unit.]
-- **Encoder and Pad Mapping panel** (from the screenshot): dial pages are lettered **A–H**; each dial has a CC and a channel (defaults CC 20–27, channel 1). Pads are numbered across the whole top row first (left four, then right four), then the bottom row; defaults run chromatically C0…D#1. A "Pad Configuration" box sets Scale, Key, Octave, Default channel and Output type (e.g. Chord) with "Apply to pads", and "Click a pad to override chord". "Propagate encoders" / "Propagate pads" buttons copy the mapping (presumably to all presets). The four small buttons each side are drawn hatched, i.e. not configurable, as two columns of upright keys beside the pads.
-- A user asked for a jog-wheel style feature (15 Aug 2026); no answer seen.
-- Not yet read: older history of #sway, and #software, #technical-support, #report-a-bug, #faq beyond the latest page.
+### Hardware operation
+- **Power on/off:** press and hold the display encoder (staff, Sep 2025).
+- **Presets:** the six round buttons at the display select the 6 presets of the bank (user, Dec 2025).
+- **Custom pad/dial mapping ("keys mode"):** press and hold for 3 s the **bottom-left black button of the right-hand group** to switch the pads and dials to the custom mapping stored in the preset; the pads turn **green** instead of the normal pink (staff, 13 Jul and 4 Oct 2026; mod, May 2026). Custom knob CCs "not remembered" is nearly always this switch not being made, or the project not pushed.
+- With the Ableton script, the **black buttons change what the white pads do** (arm, solo, etc.) and the pad colours change with the function; the bottom-right black button on the right side toggles record (users, Jul 2025 / Jun 2026).
+- **No calibration procedure** exists (staff, Sep 2025). **Factory reset** = reload the base project (mod, Jan 2026). "Delete" a preset = upload a blank one to that slot (staff, Sep 2026).
+- Pads are stiff; press nearer the edge than the centre (mod, May 2026).
+- The display shows a "voicing" screen for Instrument regions; a region set to Instrument rather than Modulation does not give X/Y modulation (mod, Jan 2026).
+
+### Power
+- Sway needs more power than some ports give (notably M1 MacBooks): it boots, then shuts off after ~2 s, or shuts off during use. Fix: second USB-C cable from the **middle (power-only) port** to a wall adapter; plug power first, then data, then switch on (staff, repeatedly).
+- **Low power mode** (firmware 1.3.0): the app's Sway logo is **yellow/orange** instead of purple; everything works, LEDs are dimmer. Grey = not connected. A USB-A to C cable works but forces low power.
+- Sensors skipping/jumping across the middle, or constant triggering: power the unit properly, or wait ~5 s after plugging in before switching on so the sensors initialise (staff, Aug 2026).
+- For the firmware update on an M1, the power cable had to be unplugged and only the data cable reconnected (user, May 2026).
+
+### Software 1.2.0 + firmware 1.3.0 (released 28 Apr 2026)
+- New: two-handed note playing, **MPE**, customisable buttons & knobs, **preset switching via Program Change**, adjustable LED brightness, low power mode, copy/paste/move regions and presets, pull projects from the Sway.
+- **Program Change is receive-only:** the Sway changes preset when it receives a PC; it cannot send PC (staff, 29 Apr 2026). Walkthrough: https://youtu.be/YznUAxwg920?t=450
+- Firmware version: click the SWAY word at the bottom-left of the app. Units shipped mid-2026 already have 1.3.0.
+- Updating: uninstall the old app first, install 1.2.0, on Windows install the DFU driver; update video https://www.youtube.com/watch?v=KFL2E-Oj8js . Failed/hung updates and units not powering up afterwards were reported (May 2026).
+- "Beat stutter" was renamed **Trigger** in the new app (staff, May 2026). Full app walkthrough incl. two-handed mapping and X triggers: https://youtu.be/AlOIoXLroMA
+- MPE could not be selected on some layouts (worked on the 12-note grid, not on a 6-note grid with two Y regions) (user, Jul 2026).
+- In Instrument regions the CC channel can only be changed after choosing a note; otherwise CCs go out on channel 1 (user, Feb 2026).
+- Region colours: start colour applied, active colour sometimes unrelated (user, Jul 2025, older firmware).
+- The app does not follow preset changes made on the hardware; it only builds and uploads (mod, Dec 2025). No 1x16 layout; layouts are fixed, not user-drawn (staff, Aug 2026). Key/scale can only be changed in the app (button top-right above the layouts), not from the hardware (Sep 2026).
+- A written manual PDF exists (posted by staff as an attachment in #sway, 5 May 2026).
+
+### DAWs and MIDI
+- Ableton script: separate versions for Live 10 and Live 11+ (tested 10.1, 11.3, 12.3). Must sit directly in `User Library/Remote Scripts` (exact spelling, not zipped, not nested); on Windows delete the Mac file inside the script folder; enable Remote and MPE on the Sway's ports. Live 8 is not supported.
+- Notes/CC only appear after a project has been pushed to the device.
+- Hardware synths: TRS MIDI out; watch for one-octave note-name offsets between devices.
+- iOS/iPad works over USB-C with the second cable on power.
+- Community projects mentioned: a web-based version of the config app with a shared device library (Dec 2025), a standalone performance app incl. Android (Nov 2026), a Linux user documenting setup (Aug 2025).
