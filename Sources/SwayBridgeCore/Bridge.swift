@@ -4,18 +4,19 @@ import Foundation
 import Dispatch
 import SwayKit
 
-struct BridgeState: Codable {
-    var connected = false          // serial link up
-    var midiConnected = false
-    var device: DeviceInfo?
-    var selection: PresetSelection?
-    var project: Project?
-    var error: String?
+public struct BridgeState: Codable {
+    public var connected = false          // serial link up
+    public var midiConnected = false
+    public var device: DeviceInfo?
+    public var selection: PresetSelection?
+    public var project: Project?
+    public var error: String?
+    public init() {}
 }
 
-struct BridgeError: Error, CustomStringConvertible { var description: String }
+public struct BridgeError: Error, CustomStringConvertible { public var description: String }
 
-final class Bridge {
+public final class Bridge {
     private let server: WebServer
     private let backups: URL
     private let work = DispatchQueue(label: "sway.serial")   // every serial operation runs here
@@ -26,11 +27,16 @@ final class Bridge {
     private var midi: MIDIListener!
     private let encoder = JSONEncoder()
 
-    init(server: WebServer, backups: URL) {
+    /// Hooks for an app embedding the bridge. Set before `start()`; called on the bridge's queue.
+    public var onState: ((BridgeState) -> Void)?
+    public var onMIDI: (([UInt8]) -> Void)?
+
+    public init(server: WebServer, backups: URL) {
         self.server = server
         self.backups = backups
         encoder.outputFormatting = [.sortedKeys]   // stable output, so pages can compare states
-        midi = makeMIDIListener(matching: "sway") { [weak server] message in
+        midi = makeMIDIListener(matching: "sway") { [weak self, weak server] message in
+            self?.onMIDI?(message)
             let ms = Int(Date().timeIntervalSince1970 * 1000)
             server?.broadcast("{\"type\":\"midi\",\"t\":\(ms),\"m\":[\(message.map(String.init).joined(separator: ","))]}")
         }
@@ -43,8 +49,28 @@ final class Bridge {
         }
     }
 
-    func start() {
+    public func start() {
         work.async { self.tick(counter: 0) }
+    }
+
+    // MARK: - commands from an embedding app (completion runs on the bridge's queue)
+
+    public func reload(completion: @escaping (Error?) -> Void) {
+        run({ try self.refresh() }, completion)
+    }
+
+    public func setBrightness(_ value: Int, completion: @escaping (Error?) -> Void) {
+        run({ try self.applyBrightness(value) }, completion)
+    }
+
+    public func writePreset(bank: Int, preset: Int, _ edited: Preset, completion: @escaping (Error?) -> Void) {
+        run({ try self.store(edited, bank: bank, preset: preset) }, completion)
+    }
+
+    private func run(_ body: @escaping () throws -> Void, _ completion: @escaping (Error?) -> Void) {
+        work.async {
+            do { try body(); self.publish(); completion(nil) } catch { completion(error) }
+        }
     }
 
     /// Once a second: follow preset changes made on the hardware. Every third second:
@@ -61,7 +87,7 @@ final class Bridge {
         }
         // With pages open, follow the hardware every second; otherwise every third second is
         // enough to notice an unplug.
-        if client != nil && (server.clientCount > 0 || counter % 3 == 0) { pollSelection() }
+        if client != nil && (server.clientCount > 0 || onState != nil || counter % 3 == 0) { pollSelection() }
         work.asyncAfter(deadline: .now() + 1) { self.tick(counter: counter + 1) }
     }
 
@@ -184,35 +210,44 @@ final class Bridge {
         case "refresh":
             try refresh()
         case "setBrightness":
-            let value = try int("value", 0...255)
-            try withClient { try $0.setBrightness(value) }
-            state.device?.brightness = value
+            try applyBrightness(try int("value", 0...255))
         case "writePreset":
-            // Write one preset to the Sway, then read it back and confirm it took.
             let bank = try int("bank", 0...5), preset = try int("preset", 0...5)
             guard let data = params["data"], let json = try? JSONSerialization.data(withJSONObject: data),
                   let edited = try? JSONDecoder().decode(Preset.self, from: json) else { throw BridgeError(description: "bad or missing 'data'") }
-            let index = bank * SwayLayout.presetsPerBank + preset
-            guard let project = state.project, index < project.presets.count else { throw BridgeError(description: "no project loaded") }
-            let bytes = edited.encoded()
-            backup(project.presets[index].encoded(), name: "preset-b\(bank)p\(preset)-before")
-            // The Sway only lets us read back the *active* preset on its own, so verify by
-            // re-reading the whole project and checking this slot.
-            try withClient { client in
-                try client.writePreset(bank: bank, preset: preset, bytes: bytes)
-                let raw = try client.readProject()
-                let fresh = try Project(bytes: raw)
-                guard index < fresh.presets.count, fresh.presets[index].encoded() == bytes else {
-                    throw BridgeError(description: "Sway did not store the preset as sent")
-                }
-                state.project = fresh
-                state.selection = try client.selection()   // an upload makes the Sway switch to that preset
-                backup(raw, name: "project")
-            }
+            try store(edited, bank: bank, preset: preset)
         default:
             throw BridgeError(description: "unknown method \(method)")
         }
         publish()
+    }
+
+    private func applyBrightness(_ value: Int) throws {
+        guard (0...255).contains(value) else { throw BridgeError(description: "brightness out of range") }
+        try withClient { try $0.setBrightness(value) }
+        state.device?.brightness = value
+    }
+
+    /// Write one preset to the Sway, then read it back and confirm it took.
+    private func store(_ edited: Preset, bank: Int, preset: Int) throws {
+        guard (0...5).contains(bank), (0...5).contains(preset) else { throw BridgeError(description: "no such preset slot") }
+        let index = bank * SwayLayout.presetsPerBank + preset
+        guard let project = state.project, index < project.presets.count else { throw BridgeError(description: "no project loaded") }
+        let bytes = edited.encoded()
+        backup(project.presets[index].encoded(), name: "preset-b\(bank)p\(preset)-before")
+        // The Sway only lets us read back the *active* preset on its own, so verify by
+        // re-reading the whole project and checking this slot.
+        try withClient { client in
+            try client.writePreset(bank: bank, preset: preset, bytes: bytes)
+            let raw = try client.readProject()
+            let fresh = try Project(bytes: raw)
+            guard index < fresh.presets.count, fresh.presets[index].encoded() == bytes else {
+                throw BridgeError(description: "Sway did not store the preset as sent")
+            }
+            state.project = fresh
+            state.selection = try client.selection()   // an upload makes the Sway switch to that preset
+            backup(raw, name: "project")
+        }
     }
 
     // MARK: - publishing
@@ -222,10 +257,13 @@ final class Bridge {
         return "{\"type\":\"state\",\"state\":\(json)}"
     }
 
-    private func publish() { server.broadcast(stateMessage()) }
+    private func publish() {
+        server.broadcast(stateMessage())
+        onState?(state)
+    }
 }
 
-func log(_ message: String) {
+public func log(_ message: String) {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.dateFormat = "HH:mm:ss"

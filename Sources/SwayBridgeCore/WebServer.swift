@@ -52,7 +52,7 @@ final class WebSocketConnection {
     }
 }
 
-final class WebServer {
+public final class WebServer {
     let port: Int
     let webRoot: URL
     var onOpen: (WebSocketConnection) -> Void = { _ in }
@@ -61,7 +61,7 @@ final class WebServer {
     private let lock = NSLock()
     private var connections: [WebSocketConnection] = []
 
-    init(port: Int, webRoot: URL) {
+    public init(port: Int, webRoot: URL) {
         self.port = port
         self.webRoot = webRoot.standardizedFileURL
     }
@@ -74,7 +74,7 @@ final class WebServer {
     }
 
     /// Binds 127.0.0.1 only and serves forever on background threads.
-    func start() throws {
+    public func start() throws {
         #if os(Windows)
         var wsa = WSADATA()
         WSAStartup(0x0202, &wsa)

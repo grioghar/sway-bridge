@@ -12,8 +12,8 @@ let package = Package(
     ],
     targets: [
         .target(name: "SwayKit"),
-        .executableTarget(
-            name: "sway-bridge",
+        .target(
+            name: "SwayBridgeCore",
             dependencies: ["SwayKit"],
             linkerSettings: [
                 .linkedFramework("CoreMIDI", .when(platforms: [.macOS])),
@@ -21,7 +21,14 @@ let package = Package(
                 .linkedLibrary("ws2_32", .when(platforms: [.windows])),
             ]
         ),
+        .executableTarget(name: "sway-bridge", dependencies: ["SwayBridgeCore"]),
         .testTarget(name: "SwayKitTests", dependencies: ["SwayKit"]),
     ],
     swiftLanguageVersions: [.v5]
 )
+
+// The native configurator app is macOS only (SwiftUI); scripts/build-mac.sh bundles it as Sway Bridge.app.
+#if os(macOS)
+package.products.append(.executable(name: "SwayApp", targets: ["SwayApp"]))
+package.targets.append(.executableTarget(name: "SwayApp", dependencies: ["SwayKit", "SwayBridgeCore"]))
+#endif

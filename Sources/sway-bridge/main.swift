@@ -2,6 +2,7 @@
 //   sway-bridge [--port 7729] [--web <dir>] [--backups <dir>]
 import Foundation
 import Dispatch
+import SwayBridgeCore
 
 var port = 7729
 var webDirectory: String?
