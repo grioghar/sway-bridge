@@ -95,3 +95,7 @@ python3 tools/build_m4l.py     # regenerate the Max for Live device
 The codec tests compare against captures from a real device in `captures/`: the project as
 read from a Sway on firmware 1.3.0 (Audima's factory presets), a project file saved by
 Audima's app, and a MIDI log of a few gestures. Those tests are skipped if the files are absent.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). The files in `captures/` hold Audima's factory presets as read from a device and are included only as test data.
