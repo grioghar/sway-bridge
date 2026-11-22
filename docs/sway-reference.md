@@ -230,7 +230,7 @@ Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manua
 ### Program Change (receive)
 - A MIDI clip routed to the Sway with **Bank and Program set to the target bank and preset number** switches preset when played.
 - **Bank 0, Program 37 = enter SLEEP; Bank 0, Program 38 = exit SLEEP.**
-- **Measured on firmware 1.3.0 (2026-11-22):** a raw Program Change on channel 1 with value 0-35 selects preset `bank * 6 + preset` (both counted from 0), with no Bank Select needed: value 2 gave bank 1 preset 3, value 7 gave bank 2 preset 2, value 35 gave bank 6 preset 6. The manual's 37 and 38 are the same scale counted from 1 (raw 36 and 37); sleep/wake were not tried.
+- **Measured on firmware 1.3.0 (2026-11-22):** a raw Program Change on channel 1 with value 0-35 selects preset `bank * 6 + preset` (both counted from 0), with no Bank Select needed: value 2 gave bank 1 preset 3, value 7 gave bank 2 preset 2, value 35 gave bank 6 preset 6. The manual's 37 and 38 are the same scale counted from 1 (raw 36 and 37); sleep/wake confirmed, see the test notes below.
 
 ### Hardware
 - Ports: MIDI out **TRS Type A** (left), USB-C power in (middle; wall adapter rated under 35 W), USB-C host data+power (right). Class-compliant USB MIDI on macOS, Windows 10+ and Linux.
@@ -351,7 +351,7 @@ Audima's app names every region setting ("struct RegionOptions with 30 elements"
 ### Checks on 2026-11-22 (afternoon)
 - **Pad order confirmed on the hardware by the owner:** pressing the four corner pads lit the matching pads on the app's drawing, so pads are numbered across the top row (left four, right four) and then the bottom row, and the app's live pad lighting works.
 - **App buttons exercised on the device:** Switch Sway moved the Sway from bank 1 preset 2 to preset 1 and back; Send to Sway stored an edit (Clear on release on region 1 of bank 1 preset 1) and then the reverse edit. Afterwards the device's project, including the active preset, was byte-identical to the first capture. A send of a 12-region preset takes roughly ten seconds because the whole project is read back to verify it.
-- **Sleep and wake by Program Change: inconclusive.** Raw Program Change 36 and then 37 were sent on channel 1. The Sway kept answering over USB and stayed on the same preset after each, which is consistent with sleep/wake (they should not change preset) but does not show that the sensors paused; that needs someone watching the display or waving a hand between the two messages.
+- **Sleep and wake by Program Change: inconclusive.** Raw Program Change 36 and then 37 were sent on channel 1. The Sway kept answering over USB and stayed on the same preset after each, which is consistent with sleep/wake (they should not change preset) but does not show that the sensors paused; that needs someone watching the display or waving a hand between the two messages. **Settled 2026-11-22:** with a hand moving through the regions of B2 P2 for 45 s, raw Program Change 36 was sent at 15 s and 37 at 30 s. MIDI lines received: 49 before, 1 in the 15 s after 36, 59 after 37. So raw 36 = sleep (sensors stop sending) and raw 37 = wake; the preset selection and stored project were unchanged.
 
 ### Display and knob, worked out step by step with photos (2026-11-22)
 - **Screen layout** (Modulation region): top line `SLEEP`, `REG: 1`, `B1 P2`; then a row `Axis  X1  Y1` and a row `CC  50  38`. An output that is switched off shows `--`. "CC" is a row label, not a mode; there is no NRPN mode.

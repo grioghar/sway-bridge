@@ -67,7 +67,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "From Ableton Live or another DAW", points: [
             "Send a Program Change to the Sway's MIDI port. Measured on firmware 1.3.0: values 0–35 select the presets in order, bank 1 preset 1 first (in software that counts from 1, use 1–36).",
-            "Audima's manual gives the next two values as Sleep and Wake (37 and 38 when counting from 1). Sway Bridge has not tried these.",
+            "The next two values are Sleep and Wake: 36 and 37 (37 and 38 when counting from 1). Measured: after Sleep the sensors send nothing until Wake arrives, and the preset stays where it was.",
         ]),
         HelpSection(heading: "On the Sway", points: [
             "Press one of the six round buttons at the display to load that preset of the current bank.",
