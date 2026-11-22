@@ -63,7 +63,7 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "From this app", points: [
             "Select a preset and click Switch Sway (⌘↩), or right-click a preset in the sidebar or the All Presets grid.",
             "Sway Bridge sends the Sway a MIDI Program Change and then asks it which preset is active, so an error here means the Sway really did not switch. This needs Sway firmware 1.3.0 or later.",
-            "Firmware 1.3.0 has a flaw here: when a preset is entered by Program Change, the Sway overwrites every region's chord type with the first region's. Sway Bridge checks for this after switching and puts the preset back as it was, so switching from this app is safe. A Program Change sent from Ableton or another DAW is not protected.",
+            "Firmware 1.3.0 has a flaw here: when a preset is entered by Program Change, the Sway overwrites every region's chord type with the first region's. Sway Bridge checks for this after switching and puts the preset back as it was, so switching from this app is safe. The same thing happens when the preset is chosen with the Sway's own preset buttons or by a Program Change from Ableton or another DAW, and those are not protected. Sending the preset from here again repairs it.",
         ]),
         HelpSection(heading: "From Ableton Live or another DAW", points: [
             "Send a Program Change to the Sway's MIDI port. Measured on firmware 1.3.0: values 0–35 select the presets in order, bank 1 preset 1 first (in software that counts from 1, use 1–36).",
@@ -71,7 +71,7 @@ private let helpTopics: [HelpTopic] = [
         ]),
         HelpSection(heading: "On the Sway", points: [
             "Press one of the six round buttons at the display to load that preset of the current bank.",
-            "To change bank, hold preset button 3, say, for about 2 seconds to go to bank 3. That is how Audima's videos and staff describe it; their newer manual says to hold any preset button until the display shows bank selection, then press 1–6.",
+            "To change bank, hold the preset button with the bank's number for about 2 seconds: holding button 3 goes to bank 3 and lands on its first preset. Then press a button briefly to choose the preset. (Checked on firmware 1.3.0. Audima's manual describes a separate bank selection screen, which this firmware does not show.)",
             "This window follows the Sway: when you change preset on the hardware, the editor moves to it unless you have unsent changes.",
         ]),
     ]),
