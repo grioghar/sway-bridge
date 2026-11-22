@@ -129,7 +129,7 @@ Button-level front-panel operation, bank/preset selection keys, display button a
 
 ## 9. From the Audima Labs Discord (read 2026-11-22)
 
-Read in full: #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway, #faq, #sway-tutorials, #ideas, #design-talk; #general-chat back to Feb 2026 only. Not read: #musicians, #producers, #djs, #launch-chat, #studio-setup, #sway-content, #newcomers, the batch/shipping channels, threads, and attachments (images, videos, files). Staff = Isaac / Jeremy / Tarang (Audima); moderators = Walk The Skies, Subotix. Dates are message dates. Paraphrased.
+Read in full (all text channels visible to a member, 2026-11-22): #sway, #updates, #software, #technical-support, #report-a-bug, #feature-request, #setup-sway, #faq, #sway-tutorials, #ideas, #design-talk, #general-chat (all 2,488 messages), #djs, #producers, #musicians, #launch-chat, #studio-setup, #sway-content, and the three batch/announcement channels. #newcomers was sampled (810 join greetings, nothing about the device). Not read: threads inside channels, and attachments (images, videos, files).
 
 ### Hardware operation
 - **Power on/off:** press and hold the display encoder (staff, Sep 2025).
@@ -240,3 +240,15 @@ Source: https://cdn.audima.com.au/docs/Audima%20Labs%20The%20Sway%20User%20Manua
 ### Open questions this raises for the project
 - Where the knob-press CCs and the mappable-button CCs live in the preset bytes (candidates: the three unexplained 16-byte arrays after the pad notes, and region bytes 45-48, 72, 77).
 - Whether the idle "notes 0-14" seen on the wire were knob presses or buttons in the default (non-custom) mode.
+
+### From the remaining channels (#djs, #producers, #musicians, #launch-chat, #studio-setup, #sway-content, older #general-chat)
+- **Ableton script details (staff, Apr and Dec 2025):** the Sway's buttons solo, mute and arm tracks, navigate scenes, launch/stop individual scenes and master scene launch/stop. The lit pads mirror the Live set: with four tracks only four pads light; add tracks and more light up. Pressing the right-hand black button cycles the pad function/colour pages.
+- **Default pad behaviour:** the Sway has two built-in pad configurations by default (staff, Jan 2026); firmware 1.3.0 added the custom one where each pad's note, CC or chord is set in the app. Pad colours are still not configurable.
+- **Region capacity (staff, Oct 2024):** up to 15 notes per region. (Staff also said up to 16 regions at that time; the shipped app and manual have 12.)
+- **Lighting:** the Sway works better in the dark; haze/smoke is fine unless aimed straight at it (staff, Feb 2025). One user reported erratic sensors in a dim room (Jun 2025), and another a sensor "blind spot" that made the controller go wild (Jul 2025).
+- **Display:** dim and hard to read on stage per a user; staff say that brightness is normal (Aug 2026). No display brightness setting.
+- **Push 3 standalone:** the remote script installs on Push 3 and works, including Program Change preset switching; easiest is to map in Live and transfer the set (user, Aug 2026).
+- **DJ use:** Serato maps well and allows one CC on several functions; Rekordbox rejects a CC that is already assigned, so users give every preset its own CC numbers (preset = which CCs are sent) or use a MIDI translator. No direct connection to standalone CDJs/mixers: it needs a laptop running DJ software or a DAW. Traktor works as a generic MIDI controller; no official Traktor tutorial yet. Staff planned to export their mappings for import (Jun 2026).
+- **Press ("push") gesture:** modulation starts from the height at which the note was triggered rather than using the full height (user, Jul 2026).
+- **Other software:** no TouchDesigner patch, no Linux or mobile configuration app; any MIDI-capable software works for playing. Ableton Live Standard is enough; Suite only adds instruments and Max for Live (staff, Apr 2025).
+- The display-knob cap and the eight encoder caps are standard enough that staff offered dimensions for 3D-printed replacements (Feb 2025).
