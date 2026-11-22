@@ -27,10 +27,13 @@ private enum Geo {
             }
         }
     }
-    /// Small buttons: a 2 x 2 block inboard of each pad cluster.
+    /// Small buttons: per side, a 2 x 2 block of narrow upright keys right beside the pads,
+    /// lined up with the two pad rows (from Audima's product renders).
     static let buttons: [CGRect] = [true, false].flatMap { left -> [CGRect] in
-        let x0 = left ? origin(left: true) + 4 * (pad + gap) + 6 : origin(left: false) - 2 * 38 - 2
-        return (0..<2).flatMap { row in (0..<2).map { col in CGRect(x: x0 + CGFloat(col) * 38, y: 410 + CGFloat(row) * 30, width: 32, height: 22) } }
+        let x0 = left ? origin(left: true) + 4 * (pad + gap) : origin(left: false) - gap - 2 * 26 - 8
+        return (0..<2).flatMap { row in
+            (0..<2).map { col in CGRect(x: x0 + CGFloat(col) * 34, y: 356 + CGFloat(row) * (pad + gap), width: 26, height: pad) }
+        }
     }
 }
 

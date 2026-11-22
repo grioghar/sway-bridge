@@ -65,8 +65,9 @@ const cluster = (left) => {
   return {
     dials: [0, 1, 2, 3].map((i) => ({ x: x0 + PAD / 2 + i * (PAD + GAP), y: 318 })),
     pads: [0, 1].flatMap((row) => [0, 1, 2, 3].map((col) => ({ x: x0 + col * (PAD + GAP), y: 356 + row * (PAD + GAP) }))),
+    // Narrow upright keys right beside the pads, lined up with the two pad rows.
     buttons: [0, 1].flatMap((row) => [0, 1].map((col) => ({
-      x: (left ? x0 + 4 * (PAD + GAP) + 6 : x0 - 2 * 38 - 2) + col * 38, y: 410 + row * 30 }))),
+      x: (left ? x0 + 4 * (PAD + GAP) : x0 - GAP - 2 * 26 - 8) + col * 34, y: 356 + row * (PAD + GAP) }))),
   };
 };
 const LEFT = cluster(true), RIGHT = cluster(false);
@@ -98,8 +99,8 @@ const padNodes = PADS.map((p) => {
   return { rect, glow, text, level: 0, held: false };
 });
 const buttonNodes = BUTTONS.map((b) => {
-  el('rect', { class: 'well', x: b.x, y: b.y, width: 32, height: 22, rx: 5 });
-  return { glow: el('rect', { x: b.x, y: b.y, width: 32, height: 22, rx: 5, fill: '#ffffff', opacity: 0 }), level: 0, held: false };
+  el('rect', { class: 'well', x: b.x, y: b.y, width: 26, height: PAD, rx: 5 });
+  return { glow: el('rect', { x: b.x, y: b.y, width: 26, height: PAD, rx: 5, fill: '#ffffff', opacity: 0 }), level: 0, held: false };
 });
 
 el('rect', { class: 'panel', x: DISPLAY.x, y: DISPLAY.y, width: DISPLAY.w, height: DISPLAY.h, rx: 10 });
