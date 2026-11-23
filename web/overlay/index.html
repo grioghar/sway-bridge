@@ -8,11 +8,15 @@
   /* OBS browser source: transparent page, the drawing scales to the source width.
      Options (combine with &):
        style=outline   hardware drawn as outlines only, so video shows through
+       style=bold      like outline, with thick, fully opaque lines and heavier text
        field=full      filled region boxes above the hardware (default with the solid style)
        field=levels    thin hand-level lines only (default with style=outline)
        field=0         no hand display at all
        demo=1          synthetic performance, for positioning the source
-       bg=%23202020    test backdrop colour */
+       backdrop=%23102040   a colour behind the drawing that fades out at the edges
+                            (use 8 hex digits, e.g. %23102040cc, for a see-through one)
+       fade=40         how soft that edge is, 0-120 (default 40)
+       bg=%23202020    flat test colour for the whole page */
   html, body { margin: 0; background: transparent; overflow: hidden; }
   svg { display: block; width: 100vw; height: auto; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
   .body { fill: #0c0c0f; fill-opacity: .92; stroke: #2a2a31; stroke-width: 1.5; }
@@ -31,6 +35,16 @@
   .outline .panel, .outline .well { fill: none; stroke: #fff; stroke-opacity: .6; stroke-width: 1.5; }
   .outline text { paint-order: stroke; stroke: #000; stroke-opacity: .6; stroke-width: 3px; }
   .outline .label, .outline .sub { fill: #fff; fill-opacity: .85; }
+  /* Bold style: the outline style made to read from across a room or on a small stream window. */
+  .bold .body { stroke-opacity: 1; stroke-width: 5; }
+  .bold .panel, .bold .well { stroke-opacity: 1; stroke-width: 4; }
+  .bold text { font-weight: 700; stroke-opacity: .9; stroke-width: 5px; }
+  .bold .label { font-size: 13px; fill-opacity: 1; }
+  .bold .value { font-size: 16px; }
+  .bold .title { font-size: 26px; }
+  .bold .sub { font-size: 15px; fill-opacity: 1; }
+  .bold .region-name { font-size: 16px; }
+  .bold .region-info, .bold .level-label { font-size: 14px; }
 </style>
 </head>
 <body>
@@ -40,7 +54,9 @@ import { SwayLink, buildMidiMap, startDemo, noteName, MODES, SCALES, FIELD_WIDTH
 
 const query = new URLSearchParams(location.search);
 if (query.get('bg')) document.body.style.background = query.get('bg');
-const outline = query.get('style') === 'outline';
+const bold = query.get('style') === 'bold';
+const outline = bold || query.get('style') === 'outline';
+const SW = bold ? 2.4 : 1;                 // line-weight multiplier for strokes set in code
 const fieldMode = { 0: 'off', off: 'off', full: 'full', levels: 'levels' }[query.get('field')] ?? (outline ? 'levels' : 'full');
 const showField = fieldMode !== 'off';
 const LED_OFF = outline ? 'none' : '#1d1d23';
@@ -55,6 +71,20 @@ const el = (tag, attrs = {}, parent = stage, text) => {
 };
 if (!showField) stage.setAttribute('viewBox', '0 220 1280 300');
 if (outline) stage.classList.add('outline');
+if (bold) stage.classList.add('bold');
+
+// Optional backdrop: a soft-edged block of colour behind everything, so the drawing stays
+// readable over busy video without a hard rectangle.
+if (query.get('backdrop')) {
+  const [vx, vy, vw, vh] = stage.getAttribute('viewBox').split(' ').map(Number);
+  const fade = Math.max(0, Math.min(120, Number(query.get('fade') ?? 40)));
+  const inset = fade * 1.2 + 4;
+  const defs = el('defs');
+  const filter = el('filter', { id: 'soft', x: '-20%', y: '-40%', width: '140%', height: '180%' }, defs);
+  el('feGaussianBlur', { stdDeviation: fade / 2 }, filter);
+  el('rect', { x: vx + inset, y: vy + inset, width: vw - 2 * inset, height: vh - 2 * inset, rx: 40,
+               fill: query.get('backdrop'), filter: fade ? 'url(#soft)' : 'none' });
+}
 
 // ---------- geometry ----------
 const FIELD = { x: 60, y: 16, w: 1160, h: 190 };
@@ -84,14 +114,14 @@ const fieldLayer = el('g');
 el('rect', { class: 'body', x: 20, y: 228, width: 1240, height: 280, rx: 22 });
 const ledLayer = el('g');
 const leds = Array.from({ length: LED_COUNT }, (_, i) => el('rect', {
-  x: STRIP.x + i * (STRIP.w / LED_COUNT) + 0.75, y: STRIP.y, width: STRIP.w / LED_COUNT - 1.5, height: STRIP.h, rx: 2, fill: LED_OFF, stroke: outline ? '#fff' : 'none', 'stroke-opacity': .35, 'stroke-width': .75 }, ledLayer));
+  x: STRIP.x + i * (STRIP.w / LED_COUNT) + 0.75, y: STRIP.y, width: STRIP.w / LED_COUNT - 1.5, height: STRIP.h, rx: 2, fill: LED_OFF, stroke: outline ? '#fff' : 'none', 'stroke-opacity': bold ? .8 : .35, 'stroke-width': bold ? 1.5 : .75 }, ledLayer));
 for (let i = 0; i < 16; i++) el('rect', { class: 'well', x: STRIP.x + 26 + i * ((STRIP.w - 52 - 24) / 15), y: 272, width: 24, height: 9, rx: 4.5 });
 
 const dialNodes = DIALS.map((d, i) => {
   const g = el('g', { transform: `translate(${d.x} ${d.y})` });
   el('circle', { class: 'well', r: 17 }, g);
-  const arc = el('path', { fill: 'none', stroke: '#c44dff', 'stroke-width': 4, 'stroke-linecap': 'round', opacity: 0 }, g);
-  const tick = el('line', { x1: 0, y1: -4, x2: 0, y2: -13, stroke: '#e9e9ee', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, g);
+  const arc = el('path', { fill: 'none', stroke: '#c44dff', 'stroke-width': 4 * (bold ? 1.6 : 1), 'stroke-linecap': 'round', opacity: 0 }, g);
+  const tick = el('line', { x1: 0, y1: -4, x2: 0, y2: -13, stroke: '#e9e9ee', 'stroke-width': 2.5 * (bold ? 1.6 : 1), 'stroke-linecap': 'round' }, g);
   const value = el('text', { class: 'value', y: -24, 'text-anchor': 'middle', opacity: 0 }, g, '');
   return { arc, tick, value, last: 0, v: null };
 });
@@ -123,7 +153,7 @@ function drawPreset() {
   regionNodes = [];
   leds.forEach((l) => { l.setAttribute('fill', LED_OFF); l.setAttribute('fill-opacity', 1); l.dataset.base = ''; });
   if (!preset) return;
-  if (fieldMode === 'full') el('rect', { x: FIELD.x, y: FIELD.y, width: FIELD.w, height: FIELD.h, rx: 12, fill: '#0c0c0f', 'fill-opacity': outline ? 0 : .55, stroke: outline ? '#ffffff66' : '#2a2a31' }, fieldLayer);
+  if (fieldMode === 'full') el('rect', { x: FIELD.x, y: FIELD.y, width: FIELD.w, height: FIELD.h, rx: 12, fill: '#0c0c0f', 'fill-opacity': outline ? 0 : .55, stroke: bold ? '#ffffff' : outline ? '#ffffff66' : '#2a2a31', 'stroke-width': bold ? 3 : 1 }, fieldLayer);
   preset.regions.slice(0, preset.regionCount).forEach((r, i) => {
     const x = FIELD.x + (r.xMin / FIELD_WIDTH) * FIELD.w, w = ((r.xMax - r.xMin) / FIELD_WIDTH) * FIELD.w;
     const y = FIELD.y + (1 - r.yMax / FIELD_DEPTH) * FIELD.h, h = ((r.yMax - r.yMin) / FIELD_DEPTH) * FIELD.h;
@@ -133,8 +163,8 @@ function drawPreset() {
       const grad = el('linearGradient', { id, x1: 0, y1: 1, x2: 0, y2: 0 }, fieldLayer);
       el('stop', { offset: 0, 'stop-color': r.colorStart }, grad);
       el('stop', { offset: 1, 'stop-color': r.colorEnd === '#000000' ? r.colorStart : r.colorEnd }, grad);
-      node.rect = el('rect', { x: x + 3, y: y + 3, width: Math.max(0, w - 6), height: Math.max(0, h - 6), rx: 8, fill: `url(#${id})`, 'fill-opacity': outline ? 0 : .22, stroke: r.colorStart, 'stroke-opacity': .8, 'stroke-width': outline ? 1.5 : 1 }, fieldLayer);
-      node.dot = el('circle', { r: 9, fill: '#fff', stroke: r.colorStart, 'stroke-width': 3, opacity: 0 }, fieldLayer);
+      node.rect = el('rect', { x: x + 3, y: y + 3, width: Math.max(0, w - 6), height: Math.max(0, h - 6), rx: 8, fill: `url(#${id})`, 'fill-opacity': outline ? 0 : .22, stroke: r.colorStart, 'stroke-opacity': bold ? 1 : .8, 'stroke-width': bold ? 4 : outline ? 1.5 : 1 }, fieldLayer);
+      node.dot = el('circle', { r: 9, fill: '#fff', stroke: r.colorStart, 'stroke-width': 3 * SW, opacity: 0 }, fieldLayer);
       const small = h < 50;
       el('text', { class: 'region-name', x: x + 12, y: y + (small ? 19 : 22) }, fieldLayer, describe(r));
       node.info = el('text', { class: 'region-info', x: x + 12, y: y + (small ? 33 : 38) }, fieldLayer, '');
@@ -142,10 +172,10 @@ function drawPreset() {
       // Minimal hand display: a floor tick per region, and a thin line that sits at the
       // hand's height (Y) with a bead at its left-right position (X). Nothing is filled.
       const pad = 6, floor = y + h - 3;
-      el('line', { x1: x + pad, y1: floor, x2: x + w - pad, y2: floor, stroke: r.colorStart, 'stroke-width': 1.5, 'stroke-opacity': .55, 'stroke-linecap': 'round' }, fieldLayer);
-      for (const edge of [x + pad, x + w - pad]) el('line', { x1: edge, y1: floor, x2: edge, y2: floor - 7, stroke: r.colorStart, 'stroke-width': 1.5, 'stroke-opacity': .55, 'stroke-linecap': 'round' }, fieldLayer);
-      node.line = el('line', { x1: x + pad, x2: x + w - pad, y1: floor, y2: floor, stroke: r.colorStart, 'stroke-width': 3, 'stroke-linecap': 'round', opacity: 0, style: `filter: drop-shadow(0 0 4px ${r.colorStart})` }, fieldLayer);
-      node.dot = el('circle', { r: 5, fill: '#fff', stroke: r.colorStart, 'stroke-width': 2, opacity: 0 }, fieldLayer);
+      el('line', { x1: x + pad, y1: floor, x2: x + w - pad, y2: floor, stroke: r.colorStart, 'stroke-width': 1.5 * SW, 'stroke-opacity': bold ? 1 : .55, 'stroke-linecap': 'round' }, fieldLayer);
+      for (const edge of [x + pad, x + w - pad]) el('line', { x1: edge, y1: floor, x2: edge, y2: floor - 7, stroke: r.colorStart, 'stroke-width': 1.5 * SW, 'stroke-opacity': bold ? 1 : .55, 'stroke-linecap': 'round' }, fieldLayer);
+      node.line = el('line', { x1: x + pad, x2: x + w - pad, y1: floor, y2: floor, stroke: r.colorStart, 'stroke-width': 3 * SW, 'stroke-linecap': 'round', opacity: 0, style: `filter: drop-shadow(0 0 4px ${r.colorStart})` }, fieldLayer);
+      node.dot = el('circle', { r: bold ? 8 : 5, fill: '#fff', stroke: r.colorStart, 'stroke-width': 2 * SW, opacity: 0 }, fieldLayer);
       node.levelText = el('text', { class: 'level-label', x: x + w - pad - 2, 'text-anchor': 'end', opacity: 0 }, fieldLayer, '');
       node.pad = pad;
     }
@@ -228,7 +258,7 @@ function frame() {
   }
   for (const p of [...padNodes, ...buttonNodes]) {
     if (!p.held) p.level = Math.max(0, p.level - 0.06);
-    p.glow.setAttribute('opacity', p.level * (outline ? 0.55 : 0.95));
+    p.glow.setAttribute('opacity', p.level * (bold ? 0.85 : outline ? 0.55 : 0.95));
   }
   for (const n of regionNodes) {
     const active = n.gate || n.held > 0 || t - n.last < 350;

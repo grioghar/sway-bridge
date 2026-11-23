@@ -169,41 +169,58 @@ public final class Bridge {
         publish()
     }
 
-    /// The preset as firmware 1.3.0 leaves it after entering it: every region's chord type
-    /// replaced by the first region's. Nil when that would change nothing (preset not at risk).
-    private func flattened(_ preset: Preset) -> [UInt8]? {
+    /// Firmware 1.3.0 overwrites every region's chord type with the first region's when a preset
+    /// is entered (by its button or by Program Change). True when `preset` could be hit by that.
+    private func atRisk(_ preset: Preset) -> Bool {
         let count = min(preset.regionCount, preset.regions.count)
-        guard count > 1 else { return nil }
-        var copy = preset
-        for i in 1..<count { copy.regions[i].chordType = copy.regions[0].chordType }
-        let bytes = copy.encoded()
-        return bytes == preset.encoded() ? nil : bytes
+        return count > 1 && preset.regions[1..<count].contains { $0.chordType != preset.regions[0].chordType }
     }
 
-    /// The same firmware flaw `activate` guards against also strikes when a preset is chosen with
-    /// the Sway's own buttons or by a Program Change from a DAW. When the Sway moves to a preset
-    /// that is at risk, read it back; if it shows exactly that damage and nothing else, upload the
-    /// original again. Any other difference is taken as a change made on the Sway and kept.
+    /// If `fresh` is `original` with its chord types flattened that way (whatever else differs),
+    /// returns `fresh` with the original chord types put back; nil if it shows no such damage.
+    private func unflattened(_ fresh: Preset, original: Preset) -> Preset? {
+        let count = min(original.regionCount, original.regions.count)
+        guard atRisk(original), fresh.regionCount == original.regionCount, fresh.regions.count >= count,
+              fresh.regions[0].chordType == original.regions[0].chordType,
+              !fresh.regions[1..<count].contains(where: { $0.chordType != fresh.regions[0].chordType }) else { return nil }
+        var repaired = fresh
+        for i in 1..<count { repaired.regions[i].chordType = original.regions[i].chordType }
+        return repaired
+    }
+
+    /// A project just read from the Sway, with the chord types this bridge knows were flattened
+    /// put back in memory. Without this, a read made for any reason would replace the good copy
+    /// of a damaged preset with the damaged one, and it could never be repaired.
+    private func remembering(_ fresh: Project) -> Project {
+        guard let known = state.project, known.presets.count == fresh.presets.count else { return fresh }
+        var merged = fresh
+        for i in merged.presets.indices {
+            if let repaired = unflattened(fresh.presets[i], original: known.presets[i]) { merged.presets[i] = repaired }
+        }
+        return merged
+    }
+
+    /// When the Sway moves to a preset that is at risk, read it back; if its chord types were
+    /// flattened, upload it again with the original chord types. Other differences (a controller
+    /// number changed with the display knob, say) are kept as they are on the Sway.
     private func repairIfFlattened(_ selection: PresetSelection) {
         let index = selection.bank * SwayLayout.presetsPerBank + selection.preset
-        guard let project = state.project, index < project.presets.count,
-              let damaged = flattened(project.presets[index]) else { return }
-        let original = project.presets[index].encoded()
+        guard let project = state.project, index < project.presets.count, atRisk(project.presets[index]) else { return }
         _ = try? withClient { client in
             var raw = try client.readProject()
             var fresh = try Project(bytes: raw)
             guard index < fresh.presets.count else { return }
-            // If the player has already moved on, leave it: an upload would pull the Sway back.
-            guard try client.selection() == selection else { return }
-            if fresh.presets[index].encoded() == damaged {
-                log("the Sway flattened the chord types of bank \(selection.bank + 1) preset \(selection.preset + 1) on entering it; restoring it")
+            // If the player has already moved on, leave the Sway alone: an upload would pull it back.
+            if try client.selection() == selection,
+               let repaired = unflattened(fresh.presets[index], original: project.presets[index]) {
+                log("the Sway flattened the chord types of bank \(selection.bank + 1) preset \(selection.preset + 1) on entering it; restoring them")
                 backup(raw, name: "project-altered-on-entry")
-                try client.writePreset(bank: selection.bank, preset: selection.preset, bytes: original)
+                try client.writePreset(bank: selection.bank, preset: selection.preset, bytes: repaired.encoded())
                 raw = try client.readProject()
                 fresh = try Project(bytes: raw)
                 state.selection = try client.selection()
             }
-            state.project = fresh
+            state.project = remembering(fresh)
             backup(raw, name: "project")
         }
     }
@@ -296,7 +313,7 @@ public final class Bridge {
                 fresh = try Project(bytes: raw)
                 state.selection = try client.selection()
             }
-            state.project = fresh
+            state.project = remembering(fresh)
             backup(raw, name: "project")
         }
         guard state.selection == PresetSelection(bank: bank, preset: preset) else {
@@ -326,7 +343,9 @@ public final class Bridge {
             guard index < fresh.presets.count, fresh.presets[index].encoded() == bytes else {
                 throw BridgeError(description: "Sway did not store the preset as sent")
             }
-            state.project = fresh
+            var merged = remembering(fresh)
+            merged.presets[index] = fresh.presets[index]   // what was just sent is the new truth for this slot
+            state.project = merged
             state.selection = try client.selection()   // an upload makes the Sway switch to that preset
             backup(raw, name: "project")
         }

@@ -188,4 +188,18 @@ final class UtilityTests: XCTestCase {
         XCTAssertEqual(p.push([0xb3, 20, 30, 0xc0, 5]), [[0xb3, 20, 30], [0xc0, 5]])
         XCTAssertEqual(p.push([0xf0, 1, 2, 3, 0xf7, 4, 0x80, 1, 2]), [[0x80, 1, 2]]) // SysEx skipped
     }
+
+    func testTransposeMovesNotesRootsAndPads() throws {
+        let project = try Project(bytes: try capture("project-device.bin"))
+        let chords = project.presets[7]
+        let up = try XCTUnwrap(chords.transposed(by: 2))
+        XCTAssertEqual(up.regions[0].notes.prefix(4).map { $0 }, chords.regions[0].notes.prefix(4).map { $0 + 2 })
+        XCTAssertEqual(up.regions[0].rootOctave * 12 + up.regions[0].rootNote,
+                       chords.regions[0].rootOctave * 12 + chords.regions[0].rootNote + 2)
+        XCTAssertEqual(up.pads.rootOctaves[0] * 12 + up.pads.rootNotes[0],
+                       chords.pads.rootOctaves[0] * 12 + chords.pads.rootNotes[0] + 2)
+        XCTAssertEqual(up.regions.map(\.chordType), chords.regions.map(\.chordType))
+        XCTAssertEqual(up.transposed(by: -2)?.encoded(), chords.encoded())     // there and back is exact
+        XCTAssertNil(chords.transposed(by: 100))                               // out of MIDI range
+    }
 }

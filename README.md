@@ -64,6 +64,8 @@ Add a Browser source pointing at one of:
 | --- | --- |
 | `http://localhost:7729/overlay/` | Solid hardware with filled region boxes |
 | `http://localhost:7729/overlay/?style=outline` | Outlines only, thin hand-level lines |
+| `http://localhost:7729/overlay/?style=bold` | Outlines with thick, opaque lines and heavier text |
+| `...&backdrop=%23102040cc&fade=40` | Adds a colour behind the drawing that fades out at the edges (8 hex digits include opacity) |
 | `…&field=full` / `…&field=levels` / `…&field=0` | Choose the hand display |
 | `…&demo=1` | Synthetic performance, for positioning the source |
 
@@ -76,6 +78,8 @@ Control Surface, and drop **Sway Map** on the MIDI track that receives the Sway.
 Sway Map shows four mapping rows at a time; the tabs 1-4 reach all sixteen. To map a control: click **Learn** on a row and move the control on the Sway, press
 **Map**, then click the parameter in Live. With the control surface active, dial page 1 is taken
 by the selected device and never reaches Sway Map; learn dials from pages 6-8, or use hands.
+The **Notes** switch at the top of Sway Map moves every note played onto the key and scale set
+in Live 12's control bar, and follows it when you change or automate it.
 A region that sends two controllers at once (a trigger and a height, say) is learned by whichever
 arrives first, so hold the hand in place before clicking Learn to get the continuous one.
 

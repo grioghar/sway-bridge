@@ -153,6 +153,24 @@ final class AppModel: ObservableObject {
         draft?.nameRaw = name == stored?.name ? stored?.nameRaw : nil
     }
 
+    /// Semitones the draft's notes sit above (+) or below (-) the preset stored on the Sway.
+    var keyOffset: Int {
+        guard let draft, let stored else { return 0 }
+        for (a, b) in zip(draft.regions.prefix(draft.regionCount), stored.regions) where a.noteCount > 0 && b.noteCount > 0 {
+            if let x = a.notes.first, let y = b.notes.first { return x - y }
+        }
+        if let x = draft.pads.rootNotes.first, let y = stored.pads.rootNotes.first,
+           let ox = draft.pads.rootOctaves.first, let oy = stored.pads.rootOctaves.first { return ox * 12 + x - oy * 12 - y }
+        return 0
+    }
+
+    /// Change key: move every note of the preset being edited. Nothing reaches the Sway until Send.
+    func transpose(by semitones: Int) {
+        guard let draft else { return }
+        if let moved = draft.transposed(by: semitones) { self.draft = moved }
+        else { say("Can't go further: a note would fall outside the MIDI range.", isError: true) }
+    }
+
     func choose(_ slot: Slot) {
         guard slot != open else { return }
         if isDirty { pendingSlot = slot } else { show(slot) }

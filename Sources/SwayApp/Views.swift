@@ -247,16 +247,17 @@ struct Editor: View {
         VStack(alignment: .leading, spacing: Metrics.gap) {
             HStack(spacing: 10) {
                 TextField("Preset name", text: Binding(get: { draft.name }, set: { model.setName($0) }))
-                    .textFieldStyle(.roundedBorder).frame(width: 190)
+                    .textFieldStyle(.roundedBorder).frame(width: 150)
                 Picker("Scale", selection: $draft.scale) {
                     ForEach(SwayLayout.scales.indices, id: \.self) { Text(SwayLayout.scales[$0]).tag($0) }
                     if !SwayLayout.scales.indices.contains(draft.scale) { Text("Scale \(draft.scale)").tag(draft.scale) }
                 }
-                .frame(width: 170)
+                .frame(width: 150)
+                KeyShift()
                 Picker("Dial page", selection: $dialPage) {
                     ForEach(0..<8, id: \.self) { Text(pageName($0)).tag($0) }
                 }
-                .pickerStyle(.segmented).frame(width: 290)
+                .pickerStyle(.segmented).frame(width: 250)
                 Spacer(minLength: 0)
                 if let open = model.open, model.selection != open {
                     Label("Live off", systemImage: "eye.slash").foregroundStyle(.secondary)
@@ -475,5 +476,25 @@ extension Binding where Value == Int {
     /// For fields that edit a required number through the optional-number box.
     var optional: Binding<Int?> {
         Binding<Int?>(get: { wrappedValue }, set: { if let new = $0 { wrappedValue = new } })
+    }
+}
+
+/// Change key: moves every note of the preset up or down a semitone at a time.
+struct KeyShift: View {
+    @EnvironmentObject var model: AppModel
+
+    var body: some View {
+        let offset = model.keyOffset
+        HStack(spacing: 3) {
+            Text(offset == 0 ? "Key" : "Key \(offset > 0 ? "+" : "−")\(abs(offset))")
+                .monospacedDigit().fixedSize()
+                .foregroundStyle(offset == 0 ? .primary : Color.orange)
+            Button { model.transpose(by: -1) } label: { Image(systemName: "minus") }
+                .help("Move every note of this preset down a semitone")
+            Button { model.transpose(by: 1) } label: { Image(systemName: "plus") }
+                .help("Move every note of this preset up a semitone")
+        }
+        .controlSize(.small)
+        .help("Change key: shifts all region notes and pad notes together. Send to Sway to apply.")
     }
 }

@@ -49,7 +49,25 @@ def param(longname, ptype, **extra):
 # ---- MIDI path ----
 midiin = obj("midiin", [30, 20, 45, 22], outlettype=["int"])
 midiout = obj("midiout", [30, 420, 50, 22], numoutlets=0)
-wire(midiin, midiout)
+# Scale switch off: MIDI passes straight through (gate outlet 1). On: gate outlet 2 takes it apart,
+# the notes go through swaymap.js to be moved onto Live's scale, and everything is put back together.
+gate = obj("gate 2 1", [30, 60, 60, 22], numinlets=2, numoutlets=2, outlettype=["", ""])
+wire(midiin, gate, 0, 1)
+wire(gate, midiout, 0)
+parse2 = obj("midiparse @hires 2", [30, 200, 120, 22], numoutlets=8, outlettype=["", "", "", "int", "int", "", "int", ""])
+wire(gate, parse2, 1)
+fmt = obj("midiformat @hires 2", [30, 380, 120, 22], numinlets=7, numoutlets=2, outlettype=["int", ""])
+wire(fmt, midiout)
+for k in (1, 2, 3, 4, 5, 6):                                       # all but notes go straight across
+    wire(parse2, fmt, k, k)
+notech = obj("pack 0 0 0", [30, 240, 90, 22], numinlets=3)          # pitch, velocity, channel
+noteun = obj("unpack 0 0", [30, 220, 70, 22], numoutlets=2, outlettype=["int", "int"])
+wire(parse2, noteun, 0)
+wire(noteun, notech, 0, 0)
+wire(noteun, notech, 1, 1)
+wire(parse2, notech, 6, 2)
+tonote = obj("prepend note", [30, 262, 80, 22])
+wire(notech, tonote)
 parse = obj("midiparse", [120, 60, 120, 22], numoutlets=8, outlettype=["", "", "", "int", "int", "", "int", ""])
 wire(midiin, parse)
 pack = obj("pack 0 0 0", [120, 120, 90, 22], numinlets=3)          # cc number, value, channel
@@ -60,8 +78,11 @@ wire(unpack, pack, 1, 1)
 wire(parse, pack, 6, 2)                                            # channel (arrives before the cc list)
 tocc = obj("prepend cc", [120, 150, 70, 22])
 wire(pack, tocc)
-js = obj("js swaymap.js", [120, 260, 90, 22], varname="engine", saved_object_attributes={"filename": "swaymap.js", "parameter_enable": 0})
+js = obj("js swaymap.js", [120, 300, 90, 22], numoutlets=2, outlettype=["", ""], varname="engine", saved_object_attributes={"filename": "swaymap.js", "parameter_enable": 0})
 wire(tocc, js)
+wire(tonote, js)
+wire(js, fmt, 1, 6)                                                # channel first (right outlet)...
+wire(js, fmt, 0, 0)                                                # ...then pitch and velocity
 
 # ---- lifecycle + saved state ----
 thisdevice = obj("live.thisdevice", [330, 20, 90, 22], numoutlets=3, outlettype=["bang", "int", "int"])
@@ -92,7 +113,7 @@ wire(sel1, launch, 1)
 
 # ---- mapping slots: one wide column, PER_PAGE rows at a time, large text ----
 X0 = WEB_W + 10
-for text, dx, w in (("Source", 80, 110), ("Target", 262, 200), ("Min", 512, 50), ("Max", 574, 50)):
+for text, dx, w in (("Source", 80, 110), ("Target", 262, 60), ("Min", 512, 50), ("Max", 574, 50)):
     box("live.comment", [700, 20, w, 18], [X0 + dx, 3, w, 18], text=text, textjustification=0, fontsize=12.0)
 PAGES = (SLOTS + PER_PAGE - 1) // PER_PAGE
 tabs = box("live.tab", [700, 0, 200, 18], [X0, 2, 72, 20], numoutlets=3, outlettype=["", "", "float"],
@@ -100,6 +121,12 @@ tabs = box("live.tab", [700, 0, 200, 18], [X0, 2, 72, 20], numoutlets=3, outlett
            saved_attribute_attributes=param("Page", 2, parameter_enum=[str(n + 1) for n in range(PAGES)],
                                             parameter_invisible=2, parameter_unitstyle=0))
 pg = obj("prepend page", [910, 0, 90, 22]); wire(tabs, pg); wire(pg, js)
+# Switch: move played notes onto the scale set in Live (Live 12's key and scale), and follow it when it changes.
+follow = box("live.text", [1010, 0, 150, 18], [X0 + 330, 2, 172, 20], numoutlets=2, outlettype=["", ""], mode=1, fontsize=11.0,
+             text="Notes: as played", texton="Notes: follow Live's scale", parameter_enable=1, varname="follow",
+             saved_attribute_attributes=param("Follow Scale", 2, parameter_enum=["off", "on"], parameter_invisible=1))
+plus1 = obj("+ 1", [1010, 24, 40, 22], numinlets=2, numoutlets=1, outlettype=["int"]); wire(follow, plus1); wire(plus1, gate, 0, 0)
+pf = obj("prepend follow", [1060, 24, 95, 22]); wire(follow, pf); wire(pf, js)
 for i in range(SLOTS):
     row = i % PER_PAGE
     x, y = X0, TOP + row * ROW_H

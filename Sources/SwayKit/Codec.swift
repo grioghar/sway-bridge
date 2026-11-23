@@ -256,3 +256,34 @@ private func rgb(_ hex: String) -> [UInt8] {
     guard digits.count == 6 else { return [0, 0, 0] }
     return stride(from: 0, to: 6, by: 2).map { UInt8(String(digits[$0...($0 + 1)]), radix: 16) ?? 0 }
 }
+
+// MARK: - changing key
+
+extension Preset {
+    /// This preset moved up or down by `semitones`: every region note, each region's root, and the
+    /// pads' roots. Chord types, scale and everything else are unchanged, so the preset keeps its
+    /// shape in the new key. Nil if any note would leave the MIDI range 0-127.
+    public func transposed(by semitones: Int) -> Preset? {
+        guard semitones != 0 else { return self }
+        func moved(_ note: Int) -> Int? { let n = note + semitones; return (0...127).contains(n) ? n : nil }
+        var out = self
+        for i in out.regions.indices.prefix(regionCount) {
+            var r = out.regions[i]
+            for k in r.notes.indices.prefix(r.noteCount) where (0...127).contains(r.notes[k]) {
+                guard let n = moved(r.notes[k]) else { return nil }
+                r.notes[k] = n
+            }
+            // Root and octave are stored separately: MIDI note = octave * 12 + root.
+            if (0..<12).contains(r.rootNote), r.rootOctave < 11, r.noteCount > 0 {
+                guard let n = moved(r.rootOctave * 12 + r.rootNote) else { return nil }
+                r.rootNote = n % 12; r.rootOctave = n / 12
+            }
+            out.regions[i] = r
+        }
+        for i in out.pads.rootNotes.indices where i < out.pads.rootOctaves.count && (0..<12).contains(out.pads.rootNotes[i]) && out.pads.rootOctaves[i] < 11 {
+            guard let n = moved(out.pads.rootOctaves[i] * 12 + out.pads.rootNotes[i]) else { return nil }
+            out.pads.rootNotes[i] = n % 12; out.pads.rootOctaves[i] = n / 12
+        }
+        return out
+    }
+}

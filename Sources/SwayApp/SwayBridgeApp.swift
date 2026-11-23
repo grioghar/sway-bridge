@@ -33,9 +33,15 @@ struct SwayBridgeApp: App {
             CommandGroup(replacing: .help) {
                 HelpMenuItem()
                 Divider()
-                Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.solid) }
+                OverlayOptionsMenuItem()
+                Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.chosen) }
             }
         }
+
+        Window("OBS Overlay Options", id: "overlay") {
+            OverlayOptionsView()
+        }
+        .windowResizability(.contentSize)
 
         Window("Sway Bridge Help", id: "help") {
             HelpView()
@@ -59,6 +65,14 @@ enum Overlay {
 
     static func open(_ url: String) {
         if let url = URL(string: url) { NSWorkspace.shared.open(url) }
+    }
+}
+
+struct OverlayOptionsMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("OBS Overlay Options…") { openWindow(id: "overlay") }
     }
 }
 
@@ -86,9 +100,17 @@ struct MenuBarContent: View {
             NSApp.activate(ignoringOtherApps: true)
         }
         Divider()
-        Button("Copy OBS Overlay URL") { Overlay.copy(Overlay.solid) }
-        Button("Copy OBS Overlay URL (Outline Style)") { Overlay.copy(Overlay.outline) }
-        Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.solid) }
+        Button("Copy OBS Overlay URL") { Overlay.copy(Overlay.chosen) }
+        Button("OBS Overlay Options…") {
+            openWindow(id: "overlay")
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        Menu("Copy a Standard Style") {
+            Button("Solid") { Overlay.copy(Overlay.solid) }
+            Button("Outline") { Overlay.copy(Overlay.outline) }
+            Button("Bold Outline") { Overlay.copy(Overlay.bold) }
+        }
+        Button("Open OBS Overlay in Browser") { Overlay.open(Overlay.chosen) }
         Divider()
         Button("Sway Bridge Help") {
             openWindow(id: "help")

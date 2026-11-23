@@ -46,6 +46,7 @@ private let helpTopics: [HelpTopic] = [
             "Retrigger motion is a setting stored by the Sway whose effect has not been tested here. It is off in every factory preset.",
             "Sway, Pulse and Press CC are the extra gestures: shaking side to side, lifting after a note, and pushing down.",
             "Colours set the LED gradient for the region; LEDs sets which part of the light bar it uses.",
+            "Key − and + at the top move every note of the preset, region notes and pad notes together, a semitone at a time. Use it to put a preset into another key without retyping notes. Nothing changes on the Sway until you Send.",
             "Changing how the field is divided into regions (the layout) is not supported yet. Use Audima's app for that.",
         ]),
         HelpSection(heading: "Pads and dials", points: [
@@ -84,6 +85,7 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "OBS overlay", points: [
             "While Sway Bridge is running it serves an overlay for streaming. In OBS add a Browser source and paste the address from the menu bar icon: Copy OBS Overlay URL.",
             "The outline style draws only outlines so your video shows through. Add &field=levels for thin hand-level lines, &field=full for filled regions, or &field=0 for no field at all.",
+            "OBS Overlay Options, in the menu bar icon and the Help menu, chooses the look: Solid, Outline, or Bold outline with thick lines and heavier text for small or busy pictures. It can also put a colour behind the drawing that fades out at the edges. Copy OBS Overlay URL then gives the address for what you chose.",
             "Add &demo=1 to see a fake performance while you position the source.",
             "Closing this window does not stop the overlay. Quit from the menu bar icon to stop it.",
         ]),

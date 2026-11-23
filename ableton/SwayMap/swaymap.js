@@ -12,7 +12,7 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 1;
+outlets = 2;          // 0: pitch velocity, 1: channel (sent first) — notes moved onto Live's scale
 
 var SLOTS = 16;
 var slots = [];          // { ch, cc, id, path, name, pmin, pmax, lo, hi }
@@ -201,4 +201,77 @@ function applyRestore(a) {
         refresh(i);
     }
     lastSaved = a.join(" ");
+}
+
+
+// ---- follow Live's scale ----
+// With the switch on, every note played is moved to the nearest note of the scale set in Live
+// (Live 12: the key and scale in the control bar). A note keeps the pitch it started with until
+// it is released, so changing scale while holding a note never leaves one hanging.
+
+var following = 0;
+var scaleTable = null;     // input pitch -> output pitch
+var scaleSig = "";
+var held = {};             // channel * 128 + played pitch -> pitch that was sent
+var scaleTask = null;
+
+function follow(on) {
+    following = on ? 1 : 0;
+    if (following) {
+        readScale(true);
+        if (!scaleTask) scaleTask = new Task(readScale, this);
+        scaleTask.interval = 500;
+        scaleTask.repeat();
+    } else {
+        if (scaleTask) scaleTask.cancel();
+        // Release anything still sounding at a moved pitch; from now on MIDI bypasses this script.
+        for (var k in held) { var key = parseInt(k, 10); outlet(1, Math.floor(key / 128) + 1); outlet(0, held[k], 0); }
+        held = {};
+        status("Notes: as played");
+    }
+}
+
+/** Reads the key and scale from Live (twice a second while the switch is on) and rebuilds the table when they change. */
+function readScale(announce) {
+    try {
+        var song = new LiveAPI("live_set");
+        var root = parseInt(song.get("root_note"), 10);
+        var steps = song.get("scale_intervals");
+        if (isNaN(root) || !steps || !steps.length) { if (announce === true) status("This Live version has no scale to follow"); return; }
+        var sig = root + ":" + steps.join(",");
+        if (sig === scaleSig && scaleTable) { if (announce === true) announceScale(song, root); return; }
+        var inScale = [];
+        for (var i = 0; i < 12; i++) inScale.push(false);
+        for (var s = 0; s < steps.length; s++) inScale[(root + parseInt(steps[s], 10)) % 12] = true;
+        var table = [];
+        for (var p = 0; p < 128; p++) {
+            var best = p;
+            for (var d = 0; d < 7; d++) {                 // nearest scale note; a tie goes down
+                if (p - d >= 0 && inScale[(p - d) % 12]) { best = p - d; break; }
+                if (p + d <= 127 && inScale[(p + d) % 12]) { best = p + d; break; }
+            }
+            table.push(best);
+        }
+        scaleTable = table;
+        scaleSig = sig;
+        announceScale(song, root);
+    } catch (e) { status("scale read failed: " + e); }
+}
+
+function announceScale(song, root) {
+    var names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    status("Notes follow Live: " + names[root % 12] + " " + String(song.get("scale_name")));
+}
+
+function note(pitch, velocity, channel) {
+    var key = (channel - 1) * 128 + pitch, out;
+    if (velocity > 0) {
+        out = scaleTable ? scaleTable[pitch] : pitch;
+        held[key] = out;
+    } else {
+        out = held[key] !== undefined ? held[key] : (scaleTable ? scaleTable[pitch] : pitch);
+        delete held[key];
+    }
+    outlet(1, channel);
+    outlet(0, out, velocity);
 }
