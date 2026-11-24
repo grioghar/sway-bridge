@@ -17,13 +17,13 @@ MIDIClientCreate("sway-dump" as CFString, nil, nil, &client)
 var port = MIDIPortRef()
 let t0 = Date()
 MIDIInputPortCreateWithBlock(client, "in" as CFString, &port) { list, _ in
-    var p = list.pointee.packet
-    for _ in 0..<list.pointee.numPackets {
-        let len = Int(p.length)
-        let bytes = withUnsafeBytes(of: p.data) { Array($0.prefix(len)) }
+    // Walk the list in place: copying the first packet out and stepping from the copy loses
+    // everything past about 16 messages in one burst.
+    for p in list.unsafeSequence() {
+        let data = UnsafeRawPointer(p) + MemoryLayout<MIDIPacket>.offset(of: \.data)!
+        let bytes = Array(UnsafeRawBufferPointer(start: data, count: Int(p.pointee.length)))
         let t = String(format: "%8.3f", Date().timeIntervalSince(t0))
         print(t, bytes.map { String(format: "%02X", $0) }.joined(separator: " "))
-        p = MIDIPacketNext(&p).pointee
     }
 }
 var found = false

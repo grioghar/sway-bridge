@@ -50,12 +50,12 @@ final class CoreMIDIListener: MIDIListener {
         MIDIClientCreateWithBlock("sway-bridge" as CFString, &client) { _ in }
         MIDIInputPortCreateWithBlock(client, "in" as CFString, &port) { [weak self] list, _ in
             guard let self else { return }
-            var packet = list.pointee.packet
-            for _ in 0..<list.pointee.numPackets {
-                let length = Int(packet.length)
-                let bytes = withUnsafeBytes(of: packet.data) { Array($0.prefix(length)) }
+            // Walk the list in place: copying the first packet out and stepping from the copy
+            // misreads everything past about 16 messages in one burst.
+            for packet in list.unsafeSequence() {
+                let data = UnsafeRawPointer(packet) + MemoryLayout<MIDIPacket>.offset(of: \.data)!
+                let bytes = Array(UnsafeRawBufferPointer(start: data, count: Int(packet.pointee.length)))
                 for message in self.parser.push(bytes) { self.handler(message) }
-                packet = MIDIPacketNext(&packet).pointee
             }
         }
     }

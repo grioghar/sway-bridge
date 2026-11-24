@@ -26,7 +26,7 @@ struct ContentView: View {
                     Placeholder()
                 }
             }
-            .frame(minWidth: Metrics.detailWidth, minHeight: Metrics.detailHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .toolbar {
             ToolbarItemGroup {
@@ -269,7 +269,7 @@ struct Editor: View {
                        dialPage: $dialPage, feed: model.feed) { preset in
                 if let bank = model.open?.bank { model.choose(Slot(bank: bank, preset: preset)) }
             }
-            .frame(minWidth: Metrics.deviceWidth, maxWidth: .infinity, minHeight: Metrics.deviceHeight, maxHeight: .infinity)
+            .frame(minWidth: Metrics.contentWidth, maxWidth: .infinity, minHeight: Metrics.deviceHeight, maxHeight: .infinity)
             ControlInspector(draft: $draft, dialPage: $dialPage)
                 .id("\(model.open?.index ?? -1)-\(model.selected)")
                 .frame(maxWidth: .infinity, minHeight: Metrics.inspector, maxHeight: Metrics.inspector, alignment: .topLeading)
@@ -278,17 +278,18 @@ struct Editor: View {
     }
 }
 
-/// Sizes the minimum window is derived from, so nothing is ever cut off.
+/// Sizes the minimum window is derived from, so nothing is ever cut off or overlaps.
+/// `contentWidth` must hold the widest inspector (a region's, about 890 points in Trigger mode).
 enum Metrics {
     static let pad: CGFloat = 14
     static let gap: CGFloat = 10
     static let header: CGFloat = 26
-    static let deviceWidth: CGFloat = 780
-    static let deviceHeight: CGFloat = deviceWidth * 520 / 1280
+    static let contentWidth: CGFloat = 920
+    static let deviceHeight: CGFloat = 317
     static let inspector: CGFloat = 186
     static let statusBar: CGFloat = 38
     static let sidebar: CGFloat = 160
-    static var detailWidth: CGFloat { deviceWidth + 2 * pad + 1 }
+    static var detailWidth: CGFloat { contentWidth + 2 * pad + 1 }
     static var detailHeight: CGFloat { statusBar + 1 + 2 * pad + header + deviceHeight + inspector + 2 * gap }
 }
 

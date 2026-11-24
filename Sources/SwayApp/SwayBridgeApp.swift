@@ -9,9 +9,12 @@ struct SwayBridgeApp: App {
 
     var body: some Scene {
         Window("Sway Bridge", id: "main") {
-            ContentView()
-                .environmentObject(model)
-                .frame(minWidth: Metrics.sidebar + Metrics.detailWidth, minHeight: Metrics.detailHeight)
+            // The stack is as big as the larger of the two, so the window is never smaller than the
+            // usual layout, and grows if something (an error line, say) needs more than that.
+            ZStack {
+                Color.clear.frame(minWidth: Metrics.sidebar + Metrics.detailWidth, minHeight: Metrics.detailHeight)
+                ContentView().environmentObject(model)
+            }
         }
         .windowResizability(.contentMinSize)   // never smaller than the layout needs
         .defaultSize(width: Metrics.sidebar + Metrics.detailWidth, height: Metrics.detailHeight)

@@ -57,14 +57,14 @@ private let helpTopics: [HelpTopic] = [
         HelpSection(heading: "Send, revert, reload", points: [
             "Send to Sway (⌘S) stores the preset on the Sway, reads it back and checks it arrived intact. The Sway switches to that preset.",
             "Revert throws away your unsent changes. Reload reads everything from the Sway again.",
-            "“Unsent changes” in the toolbar means the editor differs from what is on the Sway.",
+            "“Unsent changes” in the status bar means the editor differs from what is on the Sway.",
         ]),
     ]),
     HelpTopic(id: "switch", title: "Switching Presets", symbol: "arrow.left.arrow.right", sections: [
         HelpSection(heading: "From this app", points: [
             "Select a preset and click Switch Sway (⌘↩), or right-click a preset in the sidebar or the All Presets grid.",
             "Sway Bridge sends the Sway a MIDI Program Change and then asks it which preset is active, so an error here means the Sway really did not switch. This needs Sway firmware 1.3.0 or later.",
-            "Firmware 1.3.0 has a flaw: whenever a preset is entered other than by sending it from the computer (Program Change, or the Sway's own preset buttons), the Sway overwrites every region's chord type with the first region's. While Sway Bridge is running it checks each preset the Sway moves to and, if it finds exactly that damage, puts the preset back as it was; the Sway reloads the preset for a moment when this happens. With Sway Bridge closed nothing protects the preset; sending it again from here repairs it.",
+            "Firmware 1.3.0 has a flaw: whenever a preset is entered other than by sending it from the computer (Program Change, or the Sway's own preset buttons), the Sway replaces every region's stored chord type with the first region's. Audima say this only affects what is displayed and the notes played stay the same; the copies saved by Sway Bridge agree. While Sway Bridge is running it puts the chord types back by sending the preset again, so the Sway reloads it for a moment.",
         ]),
         HelpSection(heading: "From Ableton Live or another DAW", points: [
             "Send a Program Change to the Sway's MIDI port. Measured on firmware 1.3.0: values 0–35 select the presets in order, bank 1 preset 1 first (in software that counts from 1, use 1–36).",
@@ -95,7 +95,7 @@ private let helpTopics: [HelpTopic] = [
             "Hold 2 seconds to switch on or off.",
             "The screen shows SLEEP, the region number and the bank and preset (for example B1 P2) on its top line, and under that the outputs of the region with their CC numbers (for example X1 50, Y1 38). One item is underlined.",
             "The knob moves between those items and can select one. Be careful with it: with an output selected, turning the knob changes that output's CC number and the Sway saves the change into the preset. If a controller number has changed by itself, this is why; Reload here shows what the Sway now holds.",
-            "While one output is selected the Sway sends only that output. This is how you teach a DAW one output at a time, and it is also the usual reason “only one axis works”. On the test unit the Sway kept sending a single axis and the knob action that returns it to sending everything was not worked out.",
+            "Normally X and Y are sent together. While one output is selected the Sway sends only that output, which is how you teach a DAW one output at a time and the usual reason “only one axis works”. To release it, move to that output and push the knob until both axes move. A selection lasts through a preset change and through sleep, and can stay in force when nothing on the screen looks selected.",
             "SLEEP pauses every sensor so you can reach across the Sway. It is one of the items on the screen.",
         ]),
         HelpSection(heading: "Pads, dials and buttons", points: [
